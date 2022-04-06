@@ -1,9 +1,4 @@
-package com.mencelt.musictag.model.user;
-
-import javax.persistence.Column;
-import javax.persistence.Id;
-import java.util.ArrayList;
-import java.util.List;
+package com.mencelt.musictag.dto.user;
 
 public class UserForm {
 

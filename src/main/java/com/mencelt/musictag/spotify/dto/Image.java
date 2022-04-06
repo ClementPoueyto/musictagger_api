@@ -1,7 +1,5 @@
 package com.mencelt.musictag.spotify.dto;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-
 public class Image{
     public int height;
     public String url;

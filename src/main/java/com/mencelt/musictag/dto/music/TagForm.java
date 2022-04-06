@@ -1,4 +1,4 @@
-package com.mencelt.musictag.model.music;
+package com.mencelt.musictag.dto.music;
 
 import java.util.ArrayList;
 import java.util.List;

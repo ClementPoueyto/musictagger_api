@@ -42,11 +42,24 @@ public class TrackController {
         return response;
     }
 
-
-
-    @GetMapping(value = "/track")
+    /*@GetMapping(value = "/track")
     @ResponseBody
-    public ResponseEntity<TrackEntity> getTrack(@RequestParam long id) throws NotFoundException {
+    public ResponseEntity<TrackEntity> getUserTracks(@RequestParam String userId) throws NotFoundException {
+        ResponseEntity response;
+        try{
+            TrackEntity track = trackManager.getTrackById(userId);
+            response = new ResponseEntity(track,HttpStatus.OK);
+        }
+        catch (RuntimeException e){
+            response = new ResponseEntity(e.getMessage(),HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }*/
+
+
+    @GetMapping(value = "/track/{id}")
+    @ResponseBody
+    public ResponseEntity<TrackEntity> getTrackById(@PathVariable long id) throws NotFoundException {
         ResponseEntity response;
         try{
             TrackEntity track = trackManager.getTrackById(id);

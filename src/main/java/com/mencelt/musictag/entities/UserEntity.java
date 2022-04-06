@@ -1,6 +1,6 @@
 package com.mencelt.musictag.entities;
 
-import com.mencelt.musictag.model.user.UserForm;
+import com.mencelt.musictag.dto.user.UserForm;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -18,8 +18,8 @@ public class UserEntity {
     private String displayName;
 
 
-    @OneToOne(cascade = CascadeType.ALL)
-    private SpotifyUserEntity spotifyUserEntity;
+    @Embedded
+    private SpotifyUser spotifyUser;
 
     @OneToMany(cascade = CascadeType.PERSIST)
     private Set<TagEntity> tagList = new HashSet<>();
@@ -71,19 +71,19 @@ public class UserEntity {
         this.displayName = displayName;
     }
 
+    public SpotifyUser getSpotifyUser() {
+        return spotifyUser;
+    }
+
+    public void setSpotifyUser(SpotifyUser spotifyUser) {
+        this.spotifyUser = spotifyUser;
+    }
+
     public Set<TagEntity> getTagList() {
         return tagList;
     }
 
     public void setTagList(Set<TagEntity> tagList) {
         this.tagList = tagList;
-    }
-
-    public SpotifyUserEntity getSpotifyUserEntity() {
-        return spotifyUserEntity;
-    }
-
-    public void setSpotifyUserEntity(SpotifyUserEntity spotifyUserEntity) {
-        this.spotifyUserEntity = spotifyUserEntity;
     }
 }

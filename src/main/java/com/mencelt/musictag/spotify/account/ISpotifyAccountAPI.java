@@ -1,10 +1,10 @@
 package com.mencelt.musictag.spotify.account;
 
-import com.mencelt.musictag.entities.SpotifyUserEntity;
+import com.mencelt.musictag.entities.UserEntity;
 
 public interface ISpotifyAccountAPI {
 
-    public String refreshToken(SpotifyUserEntity spotifyUserEntity);
+    public String refreshToken(UserEntity spotifyUser);
 
     public String InitializeRefreshToken(String accessToken, String userId);
 

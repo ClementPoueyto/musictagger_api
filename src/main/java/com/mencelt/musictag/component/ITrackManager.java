@@ -10,4 +10,5 @@ public interface ITrackManager {
     public TrackEntity getTrackBySpotifyId(String spotifyId);
 
     public TrackEntity getTrackById(long id) throws NotFoundException;
+
 }

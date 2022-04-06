@@ -3,12 +3,10 @@ package com.mencelt.musictag.spotify;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mencelt.musictag.component.IUserManager;
-import com.mencelt.musictag.entities.SpotifyUserEntity;
 import com.mencelt.musictag.entities.UserEntity;
 import com.mencelt.musictag.spotify.account.ISpotifyAccountAPI;
 import com.mencelt.musictag.spotify.dto.SpotifySearch;
 import com.mencelt.musictag.spotify.dto.SpotifyTrack;
-import com.mencelt.musictag.spotify.dto.SpotifyRefreshToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -38,7 +36,7 @@ public class SpotifyService implements ISpotifyAPI {
     @Override
     public List<SpotifyTrack> search(String query, String idUser) {
         UserEntity user = userManager.getUserBydId(idUser);
-        String accessToken = getSpotifyAccessToken(user.getSpotifyUserEntity());
+        String accessToken = getSpotifyAccessToken(user);
         ResponseEntity<String> response = prepareRequest(SPOTIFY_URL + "search?q=\" + query + \"&type=track",accessToken);
         try {
             SpotifySearch search = objectMapper.readValue(response.getBody(), SpotifySearch.class);
@@ -56,7 +54,7 @@ public class SpotifyService implements ISpotifyAPI {
 
     private ResponseEntity<String> prepareRequest(String url, String accessToken){
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", accessToken);
+        headers.set("Authorization", "Bearer "+accessToken);
         headers.set("Accept", "application/json");
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> request = new HttpEntity<>(headers);
@@ -64,16 +62,20 @@ public class SpotifyService implements ISpotifyAPI {
     }
 
     private boolean isAccessTokenValid(Timestamp timestamp, int expireIn){
+        if(timestamp==null)return false;
         LocalDateTime now = LocalDateTime.now();
-        return timestamp.toLocalDateTime().plus(Duration.ofSeconds(expireIn)).isBefore(now);
+        System.out.println(now);
+        System.out.println(timestamp.toLocalDateTime().plus(Duration.ofSeconds(expireIn)));
+        return timestamp.toLocalDateTime().plus(Duration.ofSeconds(expireIn)).isAfter(now);
     }
 
-    private String getSpotifyAccessToken(SpotifyUserEntity spotifyUser){
-        if(isAccessTokenValid(spotifyUser.getToken_creation(), spotifyUser.getExpires_in())){
-            return spotifyUser.getSpotifyAccessToken();
+    private String getSpotifyAccessToken(UserEntity user){
+        if(isAccessTokenValid(user.getSpotifyUser().getTokenCreation(), user.getSpotifyUser().getExpiresIn())){
+            return user.getSpotifyUser().getSpotifyAccessToken();
         }
         else{
-            return ISpotifyAccountAPI.refreshToken(spotifyUser);
+            System.out.println("PAS TOKEN OK");
+            return ISpotifyAccountAPI.refreshToken(user);
         }
     }
 }

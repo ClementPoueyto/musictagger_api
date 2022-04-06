@@ -1,9 +1,9 @@
 package com.mencelt.musictag.component;
 
+import com.mencelt.musictag.dto.music.TagForm;
 import com.mencelt.musictag.entities.TagEntity;
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.entities.UserEntity;
-import com.mencelt.musictag.model.music.TagForm;
 import com.mencelt.musictag.repository.TagRepository;
 import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ public class TagBean implements ITagManager {
 
 
     @Override
-    public TagEntity addTag(TagForm tagForm) throws RuntimeException {
+    public void addTag(TagForm tagForm) throws RuntimeException {
         if(tagForm.getName()==null||tagForm.getUserId()==null){
             throw new RuntimeException("name and userId are non null fields");
         }
@@ -43,7 +43,6 @@ public class TagBean implements ITagManager {
             List<Long> tagIdList = new ArrayList<>();
             tagIdList.add(323760L);
             addTagToUser(tagForm.getUserId(), tagIdList);
-            return tag;
         }
 
     }
@@ -58,7 +57,7 @@ public class TagBean implements ITagManager {
     }
 
     @Override
-    public List<TagEntity> addTagsToTrack(Long trackId, List<Long> tagIds) throws NotFoundException {
+    public void addTagsToTrack(Long trackId, List<Long> tagIds) throws NotFoundException {
         if(trackId!=null) {
             TrackEntity track = trackService.getTrackById(trackId);
 
@@ -69,13 +68,11 @@ public class TagBean implements ITagManager {
                 }
             }
             tagRepository.saveAll(tags);
-            return tags;
         }
-        return null;
     }
 
     @Override
-    public List<TagEntity> addTagToUser(String userId, List<Long> tagIdList) {
+    public void addTagToUser(String userId, List<Long> tagIdList) {
         if(tagIdList==null||userId==null){
             throw new RuntimeException("tags and userId are non null fields");
         }
@@ -94,9 +91,14 @@ public class TagBean implements ITagManager {
                 }
 
                 userService.saveUser(existing);
-                return new ArrayList<>(existing.getTagList());
             }
         }
+    }
+
+    @Override
+    public List<TagEntity> getUserTag(String userId) throws NotFoundException {
+        List<TagEntity> tags = tagRepository.findTagEntitiesByUserId(userId);
+        return tags;
     }
 
     public List<TrackEntity> getTracksFromId(List<Long> ids){

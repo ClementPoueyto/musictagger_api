@@ -1,7 +1,5 @@
 package com.mencelt.musictag.spotify.dto;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-
 class ExternalUrls{
     public String spotify;
 

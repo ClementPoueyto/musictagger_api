@@ -14,6 +14,9 @@ public class TrackBean implements ITrackManager{
     @Autowired
     TrackRepository trackRepository;
 
+    @Autowired
+    ITagManager tagManager;
+
     @Override
     public TrackEntity addTrack(TrackEntity trackEntity)  {
         System.out.println(trackEntity.toString());
@@ -48,5 +51,7 @@ public class TrackBean implements ITrackManager{
         }
        return track;
     }
+
+
 
 }

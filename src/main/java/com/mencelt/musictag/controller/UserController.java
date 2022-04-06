@@ -1,12 +1,10 @@
 package com.mencelt.musictag.controller;
 
 import com.mencelt.musictag.component.IUserManager;
-import com.mencelt.musictag.entities.SpotifyUserEntity;
-import com.mencelt.musictag.entities.TagEntity;
-import com.mencelt.musictag.entities.TrackEntity;
+import com.mencelt.musictag.dto.user.SpotifyUserForm;
+import com.mencelt.musictag.dto.user.UserForm;
+import com.mencelt.musictag.entities.SpotifyUser;
 import com.mencelt.musictag.entities.UserEntity;
-import com.mencelt.musictag.model.user.SpotifyUserForm;
-import com.mencelt.musictag.model.user.UserForm;
 import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 @CrossOrigin
 @Controller
 public class UserController {
@@ -52,10 +49,10 @@ public class UserController {
 
     @PostMapping(value = "/user/connect/spotify")
     @ResponseBody
-    public ResponseEntity<SpotifyUserEntity> connectToSpotify(@RequestBody SpotifyUserForm userForm, @RequestParam String userId) {
-        ResponseEntity<SpotifyUserEntity> response;
+    public ResponseEntity<SpotifyUser> connectToSpotify(@RequestBody SpotifyUserForm userForm, @RequestParam String userId) {
+        ResponseEntity<SpotifyUser> response;
         try{
-            SpotifyUserEntity user = userManager.connectToSpotify(userForm);
+            SpotifyUser user = userManager.connectToSpotify(userId,userForm);
             response = new ResponseEntity(user,HttpStatus.OK);
         }
         catch (RuntimeException e){

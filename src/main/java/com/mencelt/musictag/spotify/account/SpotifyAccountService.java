@@ -2,16 +2,29 @@ package com.mencelt.musictag.spotify.account;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mencelt.musictag.entities.SpotifyUserEntity;
-import com.mencelt.musictag.repository.SpotifyUserRepository;
+import com.mencelt.musictag.entities.UserEntity;
+import com.mencelt.musictag.repository.UserRepository;
 import com.mencelt.musictag.spotify.dto.SpotifyRefreshToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Base64;
 
 @Component
 public class SpotifyAccountService implements ISpotifyAccountAPI {
+
+    @Value("${spring.spotify.client_id}")
+    private String spotifyClientId;
+
+    @Value("${spring.spotify.client_secret}")
+    private String spotifyClientSecret;
 
     private final String SPOTIFY_ACCOUNT_URL = "https://accounts.spotify.com/api/";
 
@@ -20,15 +33,16 @@ public class SpotifyAccountService implements ISpotifyAccountAPI {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
-    SpotifyUserRepository spotifyUserRepository;
+    UserRepository userRepository;
 
     @Override
-    public String refreshToken(SpotifyUserEntity spotifyUser) {
-        ResponseEntity<String> response = prepareRequest(SPOTIFY_ACCOUNT_URL + "token", spotifyUser.getSpotifyAccessToken());
+    public String refreshToken(UserEntity user) {
+        if(user==null||user.getSpotifyUser()==null) throw new RuntimeException("no spotify account on user");
+        ResponseEntity<String> response = prepareRequest(SPOTIFY_ACCOUNT_URL + "token", user.getSpotifyUser().getSpotifyRefreshToken());
         try {
             SpotifyRefreshToken refreshedToken = objectMapper.readValue(response.getBody(), SpotifyRefreshToken.class);
             if (response.getStatusCode() == HttpStatus.OK) {
-                updateRefreshedToken(spotifyUser, refreshedToken);
+                updateRefreshedToken(user, refreshedToken);
                 return refreshedToken.getAccess_token();
             } else {
                 return null;
@@ -44,18 +58,25 @@ public class SpotifyAccountService implements ISpotifyAccountAPI {
         return null;
     }
 
-    private ResponseEntity<String> prepareRequest(String url, String accessToken){
+    private ResponseEntity<String> prepareRequest(String url, String refreshToken){
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.set("grant_type", "refresh_token");
+        body.set("refresh_token", refreshToken);
+
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", accessToken);
+        String auth = spotifyClientId+":"+spotifyClientSecret;
+        headers.set("Authorization", "Basic "+ Base64.getEncoder().encodeToString(auth.getBytes()));
         headers.set("Accept", "application/json");
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> request = new HttpEntity<>(headers);
-        return this.restTemplate.exchange(url, HttpMethod.GET, request, String.class);
+        headers.set("Content-Type", "application/x-www-form-urlencoded");
+        HttpEntity<MultiValueMap<String,String>> request = new HttpEntity<MultiValueMap<String,String>>(body, headers);
+        return this.restTemplate.exchange(url, HttpMethod.POST, request, String.class);
     }
 
-    private void updateRefreshedToken(SpotifyUserEntity spotifyUser, SpotifyRefreshToken spotifyRefreshToken){
-        spotifyUser.setSpotifyAccessToken(spotifyRefreshToken.getAccess_token());
-        spotifyUser.setExpires_in(spotifyRefreshToken.getExpires_in());
-        this.spotifyUserRepository.save(spotifyUser);
+    private void updateRefreshedToken(UserEntity user, SpotifyRefreshToken spotifyRefreshToken){
+        user.getSpotifyUser().setSpotifyAccessToken(spotifyRefreshToken.getAccess_token());
+        user.getSpotifyUser().setExpiresIn(spotifyRefreshToken.getExpires_in());
+        user.getSpotifyUser().setTokenCreation(Timestamp.valueOf(LocalDateTime.now()));
+        this.userRepository.save(user);
     }
+
 }
