@@ -2,23 +2,24 @@ package com.mencelt.musictag.entities;
 
 import javax.persistence.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 @Entity
-@Table(name="tag", schema = "public")
+@Table(name="tag", schema = "public",  uniqueConstraints =
+@UniqueConstraint(name = "UniqueUserAndTrack", columnNames = { "user_id" ,"track_id" }))
 public class TagEntity {
 
     @Id
     @GeneratedValue(strategy  = GenerationType.IDENTITY)
-    @Column(name = "id")
     private long id;
 
-    @Column(name = "name")
-    private String name;
+    @ElementCollection
+    private Set<String> tags = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.PERSIST)
-    private Set<TrackEntity> trackList = new HashSet<>();
+    @ManyToOne(cascade = CascadeType.MERGE)
+    private TrackEntity track;
 
     @Column(name = "user_id")
     private String userId;
@@ -27,21 +28,21 @@ public class TagEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof TagEntity)) return false;
-        TagEntity tag = (TagEntity) o;
-        return name.equals(tag.name) && userId.equals(tag.userId);
+        TagEntity tagEntity = (TagEntity) o;
+        return getTrack().equals(tagEntity.getTrack()) && getUserId().equals(tagEntity.getUserId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, userId);
+        return Objects.hash(getTrack(), getUserId());
     }
 
     @Override
     public String toString() {
         return "TagEntity{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
-                ", trackList=" + trackList +
+                ", tags=" + tags +
+                ", track=" + track +
                 ", userId='" + userId + '\'' +
                 '}';
     }
@@ -49,8 +50,9 @@ public class TagEntity {
     public TagEntity() {
     }
 
-    public TagEntity(String name, String userId) {
-        this.name = name;
+    public TagEntity(Set<String> tags, TrackEntity track, String userId) {
+        this.tags = tags;
+        this.track = track;
         this.userId = userId;
     }
 
@@ -62,20 +64,20 @@ public class TagEntity {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public Set<String> getTags() {
+        return tags;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTags(Set<String> tags) {
+        this.tags = tags;
     }
 
-    public Set<TrackEntity> getTrackList() {
-        return trackList;
+    public TrackEntity getTrack() {
+        return track;
     }
 
-    public void setTrackList(Set<TrackEntity> trackList) {
-        this.trackList = trackList;
+    public void setTrack(TrackEntity track) {
+        this.track = track;
     }
 
     public String getUserId() {

@@ -3,9 +3,10 @@ package com.mencelt.musictag.controller;
 import com.mencelt.musictag.component.ITagManager;
 import com.mencelt.musictag.dto.music.TagForm;
 import com.mencelt.musictag.entities.TagEntity;
-import com.mencelt.musictag.entities.TrackEntity;
 import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -19,7 +20,7 @@ public class TagController {
     @Autowired
     ITagManager tagManager;
 
-    @PostMapping(value = "/tag")
+    @PostMapping(value = "/tags")
     @ResponseBody
     public ResponseEntity addTag(@RequestBody TagForm tagForm) {
             System.out.println(tagForm);
@@ -34,12 +35,12 @@ public class TagController {
             return response;
     }
 
-    @PostMapping(value = "/tag/track/{trackId}")
+    @PostMapping(value = "/tags/tracks/{trackId}")
     @ResponseBody
-    public ResponseEntity addTagToTrack(@PathVariable Long trackId, @RequestBody List<Long> tagIds) {
+    public ResponseEntity addTagToTrack(@PathVariable long trackId, @RequestParam String userid , @RequestBody List<String> tagsName) {
         ResponseEntity response;
         try{
-            tagManager.addTagsToTrack(trackId, tagIds);
+            tagManager.addTagsToTrack(userid, trackId, tagsName);
             response = new ResponseEntity(HttpStatus.OK);
         }
         catch (RuntimeException | NotFoundException e){
@@ -48,21 +49,7 @@ public class TagController {
         return response;
     }
 
-    /*@PostMapping(value = "/tag/user/{userId}")
-    @ResponseBody
-    public ResponseEntity<TagEntity> addTagToUser(@PathVariable String userId, @RequestBody List<TagForm> tags) {
-        ResponseEntity<TagEntity> response;
-        try{
-            List<TagEntity> tags = tagManager.addTagToUser(userId, tagIds);
-            response = new ResponseEntity(tags,HttpStatus.OK);
-        }
-        catch (RuntimeException e){
-            response = new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);
-        }
-        return response;
-    }*/
-
-    @GetMapping(value = "/tag/{id}")
+    @GetMapping(value = "/tags/{id}")
     @ResponseBody
     public ResponseEntity<TagEntity> getTagById(@PathVariable long id) throws NotFoundException {
         ResponseEntity response;
@@ -76,12 +63,13 @@ public class TagController {
         return response;
     }
 
-    @GetMapping(value = "/tag")
+
+    @GetMapping(value = "/tags")
     @ResponseBody
-    public ResponseEntity<List<TagEntity>> getUserTag(@RequestParam String userId) throws NotFoundException {
+    public ResponseEntity<List<TagEntity>> getUserTags(@RequestParam String userId, @RequestParam int page) throws NotFoundException {
         ResponseEntity response;
         try{
-            List<TagEntity> tags = tagManager.getUserTag(userId);
+            List<TagEntity> tags = tagManager.getUserTag(userId, PageRequest.of(page,50,  Sort.by("id")) );
             response = new ResponseEntity(tags,HttpStatus.OK);
         }
         catch (RuntimeException e){
@@ -89,4 +77,20 @@ public class TagController {
         }
         return response;
     }
+
+    @GetMapping(value = "/tags/names")
+    @ResponseBody
+    public ResponseEntity<List<String>> getUserTagsName(@RequestParam String userId) throws NotFoundException {
+        ResponseEntity response;
+        try{
+            List<String> tagsName = tagManager.getUserTagsName(userId);
+            response = new ResponseEntity(tagsName,HttpStatus.OK);
+        }
+        catch (RuntimeException e){
+            response = new ResponseEntity(e.getMessage(),HttpStatus.NOT_FOUND);
+        }
+        return response;
+    }
+
+
 }

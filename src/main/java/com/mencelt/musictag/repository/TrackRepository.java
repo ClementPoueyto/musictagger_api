@@ -6,14 +6,15 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface TrackRepository extends JpaRepository<TrackEntity, Long> , CrudRepository<TrackEntity, Long> {
 
        public TrackEntity findBySpotifyId(String spotifyId);
 
-       public TrackEntity findTrackEntityById(long spotifyId);
+       public TrackEntity findTrackEntityById(long trackId);
 
-       public TrackEntity findTrackEntityByArtistAndAndName(String artist, String name);
+       public TrackEntity findTrackEntityByNameAndArtistNameAndAlbumName( String name, String albumName, String artistName);
 
 }

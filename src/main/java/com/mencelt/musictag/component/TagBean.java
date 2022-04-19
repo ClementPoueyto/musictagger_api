@@ -3,15 +3,15 @@ package com.mencelt.musictag.component;
 import com.mencelt.musictag.dto.music.TagForm;
 import com.mencelt.musictag.entities.TagEntity;
 import com.mencelt.musictag.entities.TrackEntity;
-import com.mencelt.musictag.entities.UserEntity;
 import com.mencelt.musictag.repository.TagRepository;
 import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class TagBean implements ITagManager {
@@ -20,29 +20,32 @@ public class TagBean implements ITagManager {
     ITrackManager trackService;
 
     @Autowired
-    IUserManager userService;
-
-    @Autowired
     TagRepository tagRepository;
 
 
     @Override
     public void addTag(TagForm tagForm) throws RuntimeException {
-        if(tagForm.getName()==null||tagForm.getUserId()==null){
-            throw new RuntimeException("name and userId are non null fields");
+    if(tagForm.getTags()==null||tagForm.getTags().size()<1||tagForm.getUserId()==null){
+            throw new RuntimeException("name and userId and trackId are non null fields");
         }
         else{
-            TagEntity tag = new TagEntity(tagForm.getName(), tagForm.getUserId());
-            TagEntity existing = tagRepository.findTagEntityByUserIdAndName(tagForm.getUserId(), tagForm.getName());
-            if (existing != null) {
-                tag.setId(existing.getId());
+            TrackEntity trackEntity = null;
+
+            try {
+                trackEntity = trackService.getTrackById(tagForm.getTrackId());
+            } catch (NotFoundException e) {
+                e.printStackTrace();
             }
-            List<TrackEntity> tracks = getTracksFromId(tagForm.getTracksId());
-            tag.setTrackList(new HashSet<>(tracks));
-            tagRepository.save(tag);
-            List<Long> tagIdList = new ArrayList<>();
-            tagIdList.add(323760L);
-            addTagToUser(tagForm.getUserId(), tagIdList);
+            if(trackEntity==null) throw new RuntimeException("track not found");
+            TagEntity existing = tagRepository.findTagEntityByUserIdAndTrack(tagForm.getUserId(), trackEntity);
+            if (existing == null) {
+                Set tags = new HashSet();
+                existing = new TagEntity(tags,trackEntity, tagForm.getUserId());
+            }
+            for(String name : tagForm.getTags()){
+                existing.getTags().add(name);
+            }
+            tagRepository.save(existing);
         }
 
     }
@@ -57,78 +60,27 @@ public class TagBean implements ITagManager {
     }
 
     @Override
-    public void addTagsToTrack(Long trackId, List<Long> tagIds) throws NotFoundException {
-        if(trackId!=null) {
-            TrackEntity track = trackService.getTrackById(trackId);
+    public void addTagsToTrack( String userId, long trackId,List<String>tagsName) throws NotFoundException {
+        TrackEntity track = trackService.getTrackById(trackId);
+        TagEntity tag = new TagEntity(new HashSet<>(tagsName), track, userId);
+        tagRepository.save(tag);
 
-            List<TagEntity> tags = getTagsFromId(tagIds);
-            for (TagEntity tag : tags) {
-                if(!tag.getTrackList().contains(track)) {
-                    tag.getTrackList().add(track);
-                }
-            }
-            tagRepository.saveAll(tags);
-        }
+    }
+
+
+    @Override
+    public List<TagEntity> getUserTag(String userId, PageRequest pageRequest) throws NotFoundException {
+        List<TagEntity> tags = tagRepository.findTagEntitiesByUserId(userId, pageRequest);
+        return tags;
     }
 
     @Override
-    public void addTagToUser(String userId, List<Long> tagIdList) {
-        if(tagIdList==null||userId==null){
-            throw new RuntimeException("tags and userId are non null fields");
-        }
-        else{
-            UserEntity existing = userService.getUserBydId(userId);
-            if (existing == null) {
-                throw new RuntimeException("Unknown user");
-            }
-            else {
-                List<TagEntity> tags = getTagsFromId(tagIdList);
-
-                for(TagEntity tag : tags){
-                    if(!existing.getTagList().contains(tag)){
-                        existing.getTagList().add(tag);
-                    }
-                }
-
-                userService.saveUser(existing);
-            }
-        }
-    }
-
-    @Override
-    public List<TagEntity> getUserTag(String userId) throws NotFoundException {
+    public List<String> getUserTagsName(String userId) throws NotFoundException {
         List<TagEntity> tags = tagRepository.findTagEntitiesByUserId(userId);
-        return tags;
+        Set<String> names = tags.stream().flatMap(e -> e.getTags().stream())
+                .collect(Collectors.toSet());
+        return new ArrayList<String>(names);
     }
 
-    public List<TrackEntity> getTracksFromId(List<Long> ids){
-        List<TrackEntity> tracks = new ArrayList<>();
-           for(Long id : ids){
-               try {
-                   TrackEntity track = trackService.getTrackById(id);
-                   if(track!=null){
-                       tracks.add(track);
-                   }
-               } catch (Exception e) {
-                   throw new RuntimeException(e.getMessage());
-               }
-           }
 
-           return tracks;
-    }
-    public List<TagEntity> getTagsFromId(List<Long> ids){
-        List<TagEntity> tags = new ArrayList<>();
-        for(Long id : ids){
-            try {
-                TagEntity tag = getTagById(id);
-                if(tag!=null){
-                    tags.add(tag);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e.getMessage());
-            }
-        }
-
-        return tags;
-    }
 }

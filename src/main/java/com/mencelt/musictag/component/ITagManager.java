@@ -3,7 +3,9 @@ package com.mencelt.musictag.component;
 import com.mencelt.musictag.dto.music.TagForm;
 import com.mencelt.musictag.entities.TagEntity;
 import javassist.NotFoundException;
+import org.springframework.data.domain.PageRequest;
 
+import java.awt.print.Pageable;
 import java.util.List;
 
 public interface ITagManager {
@@ -12,10 +14,9 @@ public interface ITagManager {
 
     public TagEntity getTagById(long id) throws NotFoundException;
 
-    public void addTagsToTrack(Long trackId, List<Long> tagIds) throws NotFoundException;
+    public void addTagsToTrack( String userId, long trackId,List<String>tagsName) throws NotFoundException;
 
-    public void addTagToUser(String userId, List<Long> tagIdList);
+    public List<TagEntity> getUserTag(String userId, PageRequest pageRequest) throws NotFoundException;
 
-    public List<TagEntity> getUserTag(String userId) throws NotFoundException;
-
+    public List<String> getUserTagsName(String userId) throws NotFoundException;
 }

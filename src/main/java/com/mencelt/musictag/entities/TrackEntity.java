@@ -1,23 +1,28 @@
 package com.mencelt.musictag.entities;
 
 import javax.persistence.*;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @Table(name = "track", schema = "public", uniqueConstraints =
-    @UniqueConstraint(name = "UniqueNameAndArtist", columnNames = { "name", "artist" }))
+@UniqueConstraint(name = "UniqueNameAndArtists", columnNames = { "name", "artist_name" ,"album_name" }))
 public class TrackEntity {
 
     @Id
     @GeneratedValue(strategy  = GenerationType.IDENTITY)
-    @Column(name = "id")
     private long id;
 
     @Column(name = "spotify_id")
     private String spotifyId;
 
-    @Column(name = "artist")
-    private String artist;
+    @Column(name = "artist_name")
+    private String artistName;
+
+    @Column(name = "album_name")
+    private String albumName;
+
+    @ElementCollection
+    private Set<String> artists = new HashSet<>();
 
     @Column(name = "name")
     private String name;
@@ -28,32 +33,37 @@ public class TrackEntity {
     @Column(name = "duration")
     private int duration;
 
-    public TrackEntity() {
-    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof TrackEntity)) return false;
-        TrackEntity track = (TrackEntity) o;
-        return artist.equals(track.artist) && name.equals(track.name);
-    }
-
-    @Override
-    public String toString() {
-        return "TrackEntity{" +
-                "id=" + id +
-                ", spotifyId='" + spotifyId + '\'' +
-                ", artist='" + artist + '\'' +
-                ", name='" + name + '\'' +
-                ", image='" + image + '\'' +
-                ", duration=" + duration +
-                '}';
+        TrackEntity that = (TrackEntity) o;
+        return getArtistName().equals(that.getArtistName()) && getAlbumName().equals(that.getAlbumName()) && getName().equals(that.getName());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(artist, name);
+        return Objects.hash(getArtistName(), getAlbumName(), getName());
+    }
+
+    public TrackEntity() {
+    }
+
+    public String getArtistName() {
+        return artistName;
+    }
+
+    public void setArtistName(String artistName) {
+        this.artistName = artistName;
+    }
+
+    public String getAlbumName() {
+        return albumName;
+    }
+
+    public void setAlbumName(String albumName) {
+        this.albumName = albumName;
     }
 
     public long getId() {
@@ -72,12 +82,12 @@ public class TrackEntity {
         this.spotifyId = spotifyId;
     }
 
-    public String getArtist() {
-        return artist;
+    public Set<String> getArtists() {
+        return artists;
     }
 
-    public void setArtist(String artist) {
-        this.artist = artist;
+    public void setArtists(Set<String> artists) {
+        this.artists = artists;
     }
 
     public String getName() {

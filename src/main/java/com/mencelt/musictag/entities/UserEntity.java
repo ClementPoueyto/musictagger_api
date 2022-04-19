@@ -24,7 +24,6 @@ public class UserEntity {
     @OneToMany(cascade = CascadeType.PERSIST)
     private Set<TagEntity> tagList = new HashSet<>();
 
-
     public UserEntity() {
     }
 
@@ -38,7 +37,6 @@ public class UserEntity {
         return "UserEntity{" +
                 "id='" + id + '\'' +
                 ", displayName='" + displayName + '\'' +
-                ", tagList=" + tagList +
                 '}';
     }
 

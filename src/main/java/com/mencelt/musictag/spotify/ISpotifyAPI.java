@@ -8,4 +8,6 @@ public interface ISpotifyAPI {
 
     public List<SpotifyTrack> search(String query, String userId);
 
+    public List<SpotifyTrack> importTracksFromSpotify(String userId);
+
 }

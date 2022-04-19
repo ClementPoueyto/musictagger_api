@@ -19,13 +19,12 @@ public class TrackController {
     @Autowired
     ITrackManager trackManager;
 
-    @Autowired
-    ISpotifyAPI spotifyAPI;
+
 
     @GetMapping(value = "/search")
     @ResponseBody
-    public List<SpotifyTrack> searchTrack(@RequestParam String query) {
-        return spotifyAPI.search(query,"115974471533979611957");
+    public List<SpotifyTrack> searchTrack(@RequestParam String query, @RequestParam String userId) throws NotFoundException {
+        return trackManager.search(query,userId);
     }
 
     @PostMapping (value = "/track")
@@ -70,4 +69,6 @@ public class TrackController {
         }
         return response;
     }
+
+
 }

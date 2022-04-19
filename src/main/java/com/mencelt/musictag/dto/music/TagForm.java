@@ -2,31 +2,37 @@ package com.mencelt.musictag.dto.music;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class TagForm {
-    String name;
+    List<String> tags;
     String userId;
-    List<Long> tracksId = new ArrayList<>();
+    long trackId;
 
     public TagForm() {
     }
 
     @Override
-    public String toString() {
-        return "TagForm{" +
-                "name='" + name + '\'' +
-                ", userId='" + userId + '\'' +
-                ", tracksId=" + tracksId +
-                '}';
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TagForm)) return false;
+        TagForm tagForm = (TagForm) o;
+        return getTrackId() == tagForm.getTrackId() && Objects.equals(getTags(), tagForm.getTags()) && Objects.equals(getUserId(), tagForm.getUserId());
     }
 
-    public String getName() {
-        return name;
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTags(), getUserId(), getTrackId());
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public List<String> getTags() {
+        return tags;
     }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
 
     public String getUserId() {
         return userId;
@@ -36,13 +42,11 @@ public class TagForm {
         this.userId = userId;
     }
 
-    public List<Long> getTracksId() {
-        return tracksId;
+    public long getTrackId() {
+        return trackId;
     }
 
-    public void setTracksId(List<Long> tracksId) {
-        this.tracksId = tracksId;
+    public void setTrackId(long trackId) {
+        this.trackId = trackId;
     }
-
-
 }

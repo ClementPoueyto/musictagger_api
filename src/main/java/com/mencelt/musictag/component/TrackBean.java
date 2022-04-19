@@ -2,10 +2,15 @@ package com.mencelt.musictag.component;
 
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.repository.TrackRepository;
+import com.mencelt.musictag.spotify.ISpotifyAPI;
+import com.mencelt.musictag.spotify.dto.SpotifyTrack;
 import javassist.NotFoundException;
 import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class TrackBean implements ITrackManager{
@@ -17,14 +22,17 @@ public class TrackBean implements ITrackManager{
     @Autowired
     ITagManager tagManager;
 
+    @Autowired
+    ISpotifyAPI spotifyAPI;
+
     @Override
     public TrackEntity addTrack(TrackEntity trackEntity)  {
         System.out.println(trackEntity.toString());
-        if(trackEntity.getArtist()==null||trackEntity.getName()==null){
+        if(trackEntity.getArtists()==null||trackEntity.getName()==null){
             throw new RuntimeException("artist and name are non null fields");
         }
         else{
-            TrackEntity existing = trackRepository.findTrackEntityByArtistAndAndName(trackEntity.getArtist(), trackEntity.getName());
+            TrackEntity existing = trackRepository.findTrackEntityByNameAndArtistNameAndAlbumName(trackEntity.getName(),trackEntity.getArtistName(), trackEntity.getAlbumName());
             if(existing==null){
                 trackRepository.save(trackEntity);
             }
@@ -51,6 +59,14 @@ public class TrackBean implements ITrackManager{
         }
        return track;
     }
+
+    @Override
+    public List<SpotifyTrack> search(String query, String userId) throws NotFoundException {
+        return spotifyAPI.search(query, userId);
+    }
+
+
+
 
 
 
