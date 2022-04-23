@@ -35,12 +35,12 @@ public class TagController {
             return response;
     }
 
-    @PostMapping(value = "/tags/tracks/{trackId}")
+    @PostMapping(value = "/tags/{id}")
     @ResponseBody
-    public ResponseEntity addTagToTrack(@PathVariable long trackId, @RequestParam String userid , @RequestBody List<String> tagsName) {
+    public ResponseEntity updateTagsToTrack(@PathVariable long id, @RequestParam String userId , @RequestBody List<String> tagsName) {
         ResponseEntity response;
         try{
-            tagManager.addTagsToTrack(userid, trackId, tagsName);
+            tagManager.updateTagsToTrack(userId, id, tagsName);
             response = new ResponseEntity(HttpStatus.OK);
         }
         catch (RuntimeException | NotFoundException e){
@@ -48,6 +48,7 @@ public class TagController {
         }
         return response;
     }
+
 
     @GetMapping(value = "/tags/{id}")
     @ResponseBody

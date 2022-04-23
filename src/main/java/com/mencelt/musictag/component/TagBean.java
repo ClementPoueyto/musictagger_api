@@ -60,10 +60,19 @@ public class TagBean implements ITagManager {
     }
 
     @Override
-    public void addTagsToTrack( String userId, long trackId,List<String>tagsName) throws NotFoundException {
-        TrackEntity track = trackService.getTrackById(trackId);
-        TagEntity tag = new TagEntity(new HashSet<>(tagsName), track, userId);
-        tagRepository.save(tag);
+    public void updateTagsToTrack( String userId, long tagId,List<String>tagsName) throws NotFoundException {
+        TagEntity tagExisting = tagRepository.findTagEntityById(tagId);
+        if(tagsName.size()>0){
+            if(tagExisting==null){
+                throw new RuntimeException("track not found with id : "+tagId);
+            }
+            tagExisting.setTags(new HashSet<>(tagsName));
+            tagRepository.save(tagExisting);
+        }
+        else{
+            tagRepository.delete(tagExisting);
+        }
+
 
     }
 

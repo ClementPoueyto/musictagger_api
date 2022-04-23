@@ -23,7 +23,7 @@ public class UserController {
     @Autowired
     IUserManager userManager;
 
-    @GetMapping(value = "/user/{id}")
+    @GetMapping(value = "/users/{id}")
     @ResponseBody
     public ResponseEntity<UserEntity> getUserById(@PathVariable String id) throws NotFoundException {
         ResponseEntity response;
@@ -37,7 +37,7 @@ public class UserController {
         return response;
     }
 
-    @PostMapping(value = "/user")
+    @PostMapping(value = "/users")
     @ResponseBody
     public ResponseEntity<UserEntity> createUser(@RequestBody UserForm userForm) {
         ResponseEntity<UserEntity> response;
@@ -51,7 +51,7 @@ public class UserController {
         return response;
     }
 
-    @PostMapping(value = "/user/{id}/spotify/connect")
+    @PostMapping(value = "/users/{id}/spotify/connect")
     @ResponseBody
     public ResponseEntity<SpotifyUser> connectToSpotify(@RequestBody SpotifyUserForm userForm, @PathVariable String id) {
         ResponseEntity<SpotifyUser> response;
@@ -65,7 +65,7 @@ public class UserController {
         return response;
     }
 
-    @GetMapping(value = "/user/{id}/spotify/export")
+    @GetMapping(value = "/users/{id}/spotify/export")
     @ResponseBody
     public ResponseEntity<List<TrackEntity>> exportTracksFromSpotify(@PathVariable String id) {
         ResponseEntity<List<TrackEntity>> response;
