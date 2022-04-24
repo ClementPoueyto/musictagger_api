@@ -1,19 +1,21 @@
 package com.mencelt.musictag.spotify.dto;
 
+import java.sql.Timestamp;
+
 public class SpotifyLike {
 
-    private String added_at;
+    private Timestamp added_at;
 
     private SpotifyTrack track;
 
     public SpotifyLike() {
     }
 
-    public String getAdded_at() {
+    public Timestamp getAdded_at() {
         return added_at;
     }
 
-    public void setAdded_at(String added_at) {
+    public void setAdded_at(Timestamp added_at) {
         this.added_at = added_at;
     }
 

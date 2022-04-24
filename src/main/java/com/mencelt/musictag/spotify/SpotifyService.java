@@ -53,10 +53,10 @@ public class SpotifyService implements ISpotifyAPI {
     }
 
     @Override
-    public List<SpotifyTrack> importTracksFromSpotify(String userId) {
+    public List<SpotifyLike> importTracksFromSpotify(String userId) {
         UserEntity user = userManager.getUserBydId(userId);
         String accessToken = getSpotifyAccessToken(user);
-        List<SpotifyTrack> spotifyTracks = new ArrayList<>();
+        List<SpotifyLike> spotifyTracks = new ArrayList<>();
         boolean doRequest = true;
         try {
             int offset = 0;
@@ -65,7 +65,7 @@ public class SpotifyService implements ISpotifyAPI {
                 ResponseEntity<String> response = prepareSearchRequest(SPOTIFY_URL + "me/tracks?limit="+limit+"&offset="+offset, accessToken);
                 Like likedTracks = objectMapper.readValue(response.getBody(), Like.class);
                 if (response.getStatusCode() == HttpStatus.OK) {
-                    spotifyTracks.addAll(likedTracks.getItems().stream().map(SpotifyLike::getTrack).collect(Collectors.toList()));
+                    spotifyTracks.addAll(likedTracks.getItems());
                 } else {
                     return null;
                 }

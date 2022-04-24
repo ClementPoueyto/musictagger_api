@@ -1,6 +1,7 @@
 package com.mencelt.musictag.entities;
 
 import javax.persistence.*;
+import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +25,9 @@ public class TagEntity {
     @Column(name = "user_id")
     private String userId;
 
+    @Column(name = "added_at")
+    private Timestamp addedAt;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -44,6 +48,7 @@ public class TagEntity {
                 ", tags=" + tags +
                 ", track=" + track +
                 ", userId='" + userId + '\'' +
+                ", addedAt=" + addedAt +
                 '}';
     }
 
@@ -86,5 +91,13 @@ public class TagEntity {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public Timestamp getAddedAt() {
+        return addedAt;
+    }
+
+    public void setAddedAt(Timestamp addedAt) {
+        this.addedAt = addedAt;
     }
 }

@@ -10,14 +10,15 @@ import com.mencelt.musictag.repository.TagRepository;
 import com.mencelt.musictag.repository.TrackRepository;
 import com.mencelt.musictag.repository.UserRepository;
 import com.mencelt.musictag.spotify.ISpotifyAPI;
+import com.mencelt.musictag.spotify.dto.SpotifyLike;
 import com.mencelt.musictag.spotify.dto.SpotifyTrack;
 import com.mencelt.musictag.spotify.dtomapping.TrackMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.sql.Timestamp;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class UserBean implements IUserManager{
@@ -94,31 +95,32 @@ public class UserBean implements IUserManager{
 
     @Override
     public List<TrackEntity> importTracksFromSpotify(String id) {
-        List<SpotifyTrack> spotifyTracks = spotifyAPI.importTracksFromSpotify(id);
-        List<TrackEntity> tracks = new ArrayList<>();
+        List<SpotifyLike> spotifyLikes = spotifyAPI.importTracksFromSpotify(id);
+        Map<TrackEntity, Timestamp> tracks = new HashMap<>();
 
         List<TagEntity> tags = new ArrayList<>();
-        for(SpotifyTrack spotifyTrack : spotifyTracks){
-            TrackEntity spotifyTrackEntity = trackMapper.toEntity(spotifyTrack);
+        for(SpotifyLike spotifyLike : spotifyLikes){
+            TrackEntity spotifyTrackEntity = trackMapper.toEntity(spotifyLike.getTrack());
             TrackEntity trackEntity = trackRepository.findTrackEntityByNameAndArtistNameAndAlbumName(spotifyTrackEntity.getName(),spotifyTrackEntity.getArtistName(),spotifyTrackEntity.getAlbumName());
             if(trackEntity!=null){
                 spotifyTrackEntity.setId(trackEntity.getId());
             }
-            tracks.add(spotifyTrackEntity);
+            tracks.put(spotifyTrackEntity, spotifyLike.getAdded_at());
         }
-        trackRepository.saveAll(tracks);
-        tracks.forEach(
-            (trackEntity) -> {
-                TagEntity tagEntity = tagRepository.findTagEntityByUserIdAndTrack(id, trackEntity);
+        trackRepository.saveAll(tracks.keySet());
+        tracks.entrySet().forEach(
+            (spotifyLike) -> {
+                TagEntity tagEntity = tagRepository.findTagEntityByUserIdAndTrack(id, spotifyLike.getKey());
                 if(tagEntity==null){
-                    tagEntity = new TagEntity(new HashSet<>(), trackEntity, id);
+                    tagEntity = new TagEntity(new HashSet<>(), spotifyLike.getKey(), id);
                 }
                 tagEntity.getTags().add("like");
+                tagEntity.setAddedAt(spotifyLike.getValue());
                 tags.add(tagEntity);
             }
         );
         tagRepository.saveAll(tags);
-        return tracks;
+        return new ArrayList<>(tracks.keySet());
     }
 
     @Override

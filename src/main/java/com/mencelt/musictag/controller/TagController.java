@@ -67,10 +67,11 @@ public class TagController {
 
     @GetMapping(value = "/tags")
     @ResponseBody
-    public ResponseEntity<List<TagEntity>> getUserTags(@RequestParam String userId, @RequestParam int page) throws NotFoundException {
+    public ResponseEntity<List<TagEntity>> getUserTags(@RequestParam String userId, @RequestParam int page, @RequestParam String query, @RequestParam int limit) throws NotFoundException {
         ResponseEntity response;
         try{
-            List<TagEntity> tags = tagManager.getUserTag(userId, PageRequest.of(page,50,  Sort.by("id")) );
+            List<TagEntity> tags = tagManager.getUserTags(userId,query, limit, page );
+            System.out.println(tags);
             response = new ResponseEntity(tags,HttpStatus.OK);
         }
         catch (RuntimeException e){
