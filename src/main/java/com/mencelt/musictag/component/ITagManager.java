@@ -16,7 +16,7 @@ public interface ITagManager {
 
     public void updateTagsToTrack( String userId, long tagId,List<String>tagsName) throws NotFoundException;
 
-    public List<TagEntity> getUserTags(String userId, String query, int limit, int page) throws NotFoundException;
+    public List<TagEntity> getUserTags(String userId, String query, int limit, int page, List<String> filters) throws NotFoundException;
 
     public List<String> getUserTagsName(String userId) throws NotFoundException;
 

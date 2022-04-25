@@ -83,16 +83,22 @@ public class TagBean implements ITagManager {
 
 
     @Override
-    public List<TagEntity> getUserTags(String userId, String query, int limit, int page) throws NotFoundException {
+    public List<TagEntity> getUserTags(String userId, String query, int limit, int page, List<String> filters) throws NotFoundException {
         if(limit<1 || limit>50) limit = 50;
         List<TagEntity> tags;
         query = query.replaceAll("\"","");
         query = query.replaceAll("'","");
-        if(query.trim().length() == 0){
+
+        filters.replaceAll(x->x.replaceAll("\"",""));
+        filters.replaceAll(x->x.replaceAll("'",""));
+
+        filters = filters.stream().filter((e)-> e.trim().length()>0).collect(Collectors.toList());
+
+        if(query.trim().length() == 0 && filters.size()==0){
            tags = tagRepository.findTagEntitiesByUserId(userId, PageRequest.of(page,limit,  Sort.by(Sort.Direction.DESC,"addedAt")));
         }
         else{
-            tags = tagRepository.findAll(tagSpecification.searchTags(userId, query), PageRequest.of(page,limit, Sort.by(Sort.Direction.DESC,"addedAt"))).toList();
+            tags = tagRepository.findAll(tagSpecification.searchTags(userId, query, filters), PageRequest.of(page,limit, Sort.by(Sort.Direction.DESC,"addedAt"))).toList();
         }
         return tags;
     }
