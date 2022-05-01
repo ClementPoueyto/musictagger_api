@@ -2,28 +2,25 @@ package com.mencelt.musictag.component;
 
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.repository.TrackRepository;
-import com.mencelt.musictag.spotify.ISpotifyAPI;
-import com.mencelt.musictag.spotify.dto.SpotifyTrack;
+import com.mencelt.musictag.spotify.dto.SpotifyLike;
+import com.mencelt.musictag.spotify.dtomapping.ITrackMapper;
 import javassist.NotFoundException;
-import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class TrackBean implements ITrackManager{
-
 
     @Autowired
     TrackRepository trackRepository;
 
     @Autowired
-    ITagManager tagManager;
-
-    @Autowired
-    ISpotifyAPI spotifyAPI;
+    ITrackMapper trackMapper;
 
     @Override
     public TrackEntity addTrack(TrackEntity trackEntity)  {
@@ -48,7 +45,7 @@ public class TrackBean implements ITrackManager{
 
     @Override
     public TrackEntity getTrackBySpotifyId(String spotifyId) {
-        return trackRepository.findBySpotifyId(spotifyId);
+        return trackRepository.findBySpotifyTrackSpotifyId(spotifyId);
     }
 
     @Override
@@ -61,9 +58,22 @@ public class TrackBean implements ITrackManager{
     }
 
     @Override
-    public List<SpotifyTrack> search(String query, String userId) throws NotFoundException {
-        return spotifyAPI.search(query, userId);
+    public Map<TrackEntity, Timestamp> importTrack(List<SpotifyLike> spotifyLikes){
+        Map<TrackEntity, Timestamp> tracks = new HashMap<>();
+
+        for(SpotifyLike spotifyLike : spotifyLikes){
+            TrackEntity spotifyTrackEntity = trackMapper.toEntity(spotifyLike.getTrack());
+            TrackEntity trackEntity = trackRepository.findTrackEntityByNameAndArtistNameAndAlbumName(spotifyTrackEntity.getName(),spotifyTrackEntity.getArtistName(),spotifyTrackEntity.getAlbumName());
+            if(trackEntity!=null){
+                spotifyTrackEntity.setId(trackEntity.getId());
+            }
+            tracks.put(spotifyTrackEntity, spotifyLike.getAdded_at());
+        }
+        trackRepository.saveAll(tracks.keySet());
+        return tracks;
     }
+
+
 
 
 

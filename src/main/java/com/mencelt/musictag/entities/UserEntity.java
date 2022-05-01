@@ -19,7 +19,7 @@ public class UserEntity {
 
 
     @Embedded
-    private SpotifyUser spotifyUser;
+    private SpotifyUserEmbedded spotifyUserEmbedded;
 
     @OneToMany(cascade = CascadeType.PERSIST)
     private Set<TagEntity> tagList = new HashSet<>();
@@ -69,12 +69,12 @@ public class UserEntity {
         this.displayName = displayName;
     }
 
-    public SpotifyUser getSpotifyUser() {
-        return spotifyUser;
+    public SpotifyUserEmbedded getSpotifyUser() {
+        return spotifyUserEmbedded;
     }
 
-    public void setSpotifyUser(SpotifyUser spotifyUser) {
-        this.spotifyUser = spotifyUser;
+    public void setSpotifyUser(SpotifyUserEmbedded spotifyUserEmbedded) {
+        this.spotifyUserEmbedded = spotifyUserEmbedded;
     }
 
     public Set<TagEntity> getTagList() {

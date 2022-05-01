@@ -5,8 +5,11 @@ import javax.persistence.Embeddable;
 import java.sql.Timestamp;
 
 @Embeddable
-public class SpotifyUser {
+public class SpotifyUserEmbedded {
 
+
+    @Column(name = "spotify_user_id")
+    private String spotifyId;
 
     @Column(name = "spotify_access_token")
     private String spotifyAccessToken;
@@ -20,7 +23,7 @@ public class SpotifyUser {
     @Column(name = "token_creation")
     public Timestamp tokenCreation;
 
-    public SpotifyUser() {
+    public SpotifyUserEmbedded() {
     }
 
 
@@ -67,5 +70,13 @@ public class SpotifyUser {
 
     public void setTokenCreation(Timestamp tokenCreation) {
         this.tokenCreation = tokenCreation;
+    }
+
+    public String getSpotifyId() {
+        return spotifyId;
+    }
+
+    public void setSpotifyId(String spotifyId) {
+        this.spotifyId = spotifyId;
     }
 }

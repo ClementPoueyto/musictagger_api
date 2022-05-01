@@ -12,8 +12,8 @@ public class TrackEntity {
     @GeneratedValue(strategy  = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "spotify_id")
-    private String spotifyId;
+    @Embedded
+    private SpotifyTrackEmbedded spotifyTrack;
 
     @Column(name = "artist_name")
     private String artistName;
@@ -74,13 +74,14 @@ public class TrackEntity {
         this.id = id;
     }
 
-    public String getSpotifyId() {
-        return spotifyId;
+    public SpotifyTrackEmbedded getSpotifyTrack() {
+        return spotifyTrack;
     }
 
-    public void setSpotifyId(String spotifyId) {
-        this.spotifyId = spotifyId;
+    public void setSpotifyTrack(SpotifyTrackEmbedded spotifyTrack) {
+        this.spotifyTrack = spotifyTrack;
     }
+
 
     public Set<String> getArtists() {
         return artists;

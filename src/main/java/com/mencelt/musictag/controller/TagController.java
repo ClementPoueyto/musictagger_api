@@ -70,6 +70,7 @@ public class TagController {
     public ResponseEntity<List<TagEntity>> getUserTags(@RequestParam String userId, @RequestParam int page, @RequestParam String query, @RequestParam int limit, @RequestParam List<String> filters) throws NotFoundException {
         ResponseEntity response;
         System.out.println(filters);
+        if(limit<1 || limit>50) limit = 50;
         try{
             List<TagEntity> tags = tagManager.getUserTags(userId,query, limit, page, filters);
             System.out.println(tags);

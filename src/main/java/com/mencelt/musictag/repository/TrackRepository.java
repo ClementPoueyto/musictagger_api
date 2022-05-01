@@ -11,7 +11,7 @@ import java.util.Set;
 @Repository
 public interface TrackRepository extends JpaRepository<TrackEntity, Long> , CrudRepository<TrackEntity, Long> {
 
-       public TrackEntity findBySpotifyId(String spotifyId);
+       public TrackEntity findBySpotifyTrackSpotifyId(String spotifyId);
 
        public TrackEntity findTrackEntityById(long trackId);
 

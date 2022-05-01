@@ -2,18 +2,16 @@ package com.mencelt.musictag.component;
 
 import com.mencelt.musictag.dto.user.SpotifyUserForm;
 import com.mencelt.musictag.dto.user.UserForm;
-import com.mencelt.musictag.entities.SpotifyUser;
-import com.mencelt.musictag.entities.TagEntity;
-import com.mencelt.musictag.entities.TrackEntity;
-import com.mencelt.musictag.entities.UserEntity;
-import com.mencelt.musictag.repository.TagRepository;
-import com.mencelt.musictag.repository.TrackRepository;
+import com.mencelt.musictag.entities.*;
 import com.mencelt.musictag.repository.UserRepository;
 import com.mencelt.musictag.spotify.ISpotifyAPI;
+import com.mencelt.musictag.spotify.dto.ResponsePlaylistItem;
 import com.mencelt.musictag.spotify.dto.SpotifyLike;
-import com.mencelt.musictag.spotify.dto.SpotifyTrack;
-import com.mencelt.musictag.spotify.dtomapping.TrackMapper;
+import com.mencelt.musictag.spotify.dto.SpotifyPlaylist;
+import com.mencelt.musictag.spotify.dto.SpotifyUser;
+import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
@@ -27,13 +25,13 @@ public class UserBean implements IUserManager{
     UserRepository userRepository;
 
     @Autowired
-    TagRepository tagRepository;
+    ITagManager tagManager;
 
     @Autowired
-    TrackMapper trackMapper;
+    ITrackManager trackManager;
 
     @Autowired
-    TrackRepository trackRepository;
+    IPlaylistManager playlistManager;
 
     @Autowired
     ISpotifyAPI spotifyAPI;
@@ -48,7 +46,7 @@ public class UserBean implements IUserManager{
     }
 
     @Override
-    public SpotifyUser getSpotifyUserBydId(String id) {
+    public SpotifyUserEmbedded getSpotifyUserBydId(String id) {
         UserEntity user = userRepository.findUserEntityById(id);
         if(user==null){
             throw new RuntimeException("user not found with id : "+id);
@@ -79,53 +77,55 @@ public class UserBean implements IUserManager{
     }
 
     @Override
-    public SpotifyUser connectToSpotify(String id, SpotifyUserForm userForm) {
+    public SpotifyUserEmbedded connectToSpotify(String id, SpotifyUserForm userForm) {
         UserEntity user = this.userRepository.findUserEntityById(id);
         if(user==null) throw new RuntimeException("utilisateur inconnu");
 
-        SpotifyUser spotifyUser = new SpotifyUser();
-        spotifyUser.setSpotifyAccessToken(userForm.getAccessToken());
-        spotifyUser.setExpiresIn(userForm.getExpiresIn());
-        spotifyUser.setSpotifyRefreshToken(userForm.getRefreshToken());
-        user.setSpotifyUser(spotifyUser);
+        SpotifyUserEmbedded spotifyUserEmbedded = new SpotifyUserEmbedded();
+        spotifyUserEmbedded.setSpotifyAccessToken(userForm.getAccessToken());
+        spotifyUserEmbedded.setExpiresIn(userForm.getExpiresIn());
+        spotifyUserEmbedded.setSpotifyRefreshToken(userForm.getRefreshToken());
+        user.setSpotifyUser(spotifyUserEmbedded);
+        SpotifyUser spotifyUserProfile = spotifyAPI.getUser(user);
+        user.getSpotifyUser().setSpotifyId(spotifyUserProfile.id);
         this.userRepository.save(user);
-        System.out.println(spotifyUser);
-        return spotifyUser;
+        System.out.println(spotifyUserEmbedded);
+        return spotifyUserEmbedded;
     }
 
     @Override
     public List<TrackEntity> importTracksFromSpotify(String id) {
-        List<SpotifyLike> spotifyLikes = spotifyAPI.importTracksFromSpotify(id);
-        Map<TrackEntity, Timestamp> tracks = new HashMap<>();
-
-        List<TagEntity> tags = new ArrayList<>();
-        for(SpotifyLike spotifyLike : spotifyLikes){
-            TrackEntity spotifyTrackEntity = trackMapper.toEntity(spotifyLike.getTrack());
-            TrackEntity trackEntity = trackRepository.findTrackEntityByNameAndArtistNameAndAlbumName(spotifyTrackEntity.getName(),spotifyTrackEntity.getArtistName(),spotifyTrackEntity.getAlbumName());
-            if(trackEntity!=null){
-                spotifyTrackEntity.setId(trackEntity.getId());
-            }
-            tracks.put(spotifyTrackEntity, spotifyLike.getAdded_at());
-        }
-        trackRepository.saveAll(tracks.keySet());
-        tracks.entrySet().forEach(
-            (spotifyLike) -> {
-                TagEntity tagEntity = tagRepository.findTagEntityByUserIdAndTrack(id, spotifyLike.getKey());
-                if(tagEntity==null){
-                    tagEntity = new TagEntity(new HashSet<>(), spotifyLike.getKey(), id);
-                }
-                tagEntity.getTags().add("like");
-                tagEntity.setAddedAt(spotifyLike.getValue());
-                tags.add(tagEntity);
-            }
-        );
-        tagRepository.saveAll(tags);
+        UserEntity user = getUserBydId(id);
+        List<SpotifyLike> spotifyLikes = spotifyAPI.importTracksFromSpotify(user);
+        Map<TrackEntity, Timestamp> tracks = trackManager.importTrack(spotifyLikes);
+        tagManager.generateTagFromImportedTracks(id, tracks);
         return new ArrayList<>(tracks.keySet());
     }
 
     @Override
     public UserEntity saveUser(UserEntity userEntity) {
         return userRepository.save(userEntity);
+    }
+
+    @Override
+    public void generatePlaylist(String userId, List<String> tags) {
+        UserEntity user = getUserBydId(userId);
+        List<TagEntity> trackTagged = new ArrayList<>();
+        try {
+            trackTagged = tagManager.getUserTags(userId, "", Integer.MAX_VALUE, 0, tags);
+        } catch (NotFoundException e) {
+            e.printStackTrace();
+        }
+        PlaylistEntity playlistEntity = playlistManager.getPlaylist(userId);
+        if(!trackTagged.isEmpty()){
+            List<String> spotifyIdTracks = trackTagged.stream().map(TagEntity::getTrack).map(TrackEntity::getSpotifyTrack).map(SpotifyTrackEmbedded::getUri).collect(Collectors.toList());
+            System.out.println(spotifyIdTracks);
+            SpotifyPlaylist playlist = spotifyAPI.createPlaylist("MusicTag",user,playlistEntity);
+            ResponsePlaylistItem responsePlaylistItem = spotifyAPI.updateItemPlaylist(user, spotifyIdTracks, playlist.getId(), playlist.getSnapshot_id(),0,1,0);
+            playlist.setSnapshot_id(responsePlaylistItem.getSnapshot_id());
+            playlistManager.create(playlist, trackTagged.stream().map(TagEntity::getTrack).collect(Collectors.toSet()), user);
+
+        }
     }
 
 
