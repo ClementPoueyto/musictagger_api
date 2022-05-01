@@ -90,6 +90,7 @@ public class UserBean implements IUserManager{
         user.getSpotifyUser().setSpotifyId(spotifyUserProfile.id);
         this.userRepository.save(user);
         System.out.println(spotifyUserEmbedded);
+        this.spotifyAPI.importTracksFromSpotify(user);
         return spotifyUserEmbedded;
     }
 
@@ -117,15 +118,15 @@ public class UserBean implements IUserManager{
             e.printStackTrace();
         }
         PlaylistEntity playlistEntity = playlistManager.getPlaylist(userId);
-        if(!trackTagged.isEmpty()){
-            List<String> spotifyIdTracks = trackTagged.stream().map(TagEntity::getTrack).map(TrackEntity::getSpotifyTrack).map(SpotifyTrackEmbedded::getUri).collect(Collectors.toList());
-            System.out.println(spotifyIdTracks);
-            SpotifyPlaylist playlist = spotifyAPI.createPlaylist("MusicTag",user,playlistEntity);
-            ResponsePlaylistItem responsePlaylistItem = spotifyAPI.updateItemPlaylist(user, spotifyIdTracks, playlist.getId(), playlist.getSnapshot_id(),0,1,0);
-            playlist.setSnapshot_id(responsePlaylistItem.getSnapshot_id());
-            playlistManager.create(playlist, trackTagged.stream().map(TagEntity::getTrack).collect(Collectors.toSet()), user);
+        if(trackTagged.isEmpty()) throw new RuntimeException("playlist empty");
+        List<String> spotifyIdTracks = trackTagged.stream().map(TagEntity::getTrack).map(TrackEntity::getSpotifyTrack).map(SpotifyTrackEmbedded::getUri).collect(Collectors.toList());
+        System.out.println(spotifyIdTracks);
+        SpotifyPlaylist playlist = spotifyAPI.createPlaylist("MusicTag",user,playlistEntity, "Playlist générée avec les tags : "+tags.toString());
+        ResponsePlaylistItem responsePlaylistItem = spotifyAPI.updateItemPlaylist(user, spotifyIdTracks, playlist.getId(), playlist.getSnapshot_id(),0,1,0);
+        playlist.setSnapshot_id(responsePlaylistItem.getSnapshot_id());
+        playlistManager.create(playlist, trackTagged.stream().map(TagEntity::getTrack).collect(Collectors.toSet()), user);
 
-        }
+
     }
 
 

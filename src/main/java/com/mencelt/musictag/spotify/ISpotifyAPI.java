@@ -18,5 +18,5 @@ public interface ISpotifyAPI {
 
     public SpotifyUser getUser(UserEntity user);
 
-    SpotifyPlaylist createPlaylist(String name, UserEntity user, PlaylistEntity playlistEntity);
+    SpotifyPlaylist createPlaylist(String name, UserEntity user, PlaylistEntity playlistEntity, String description);
 }

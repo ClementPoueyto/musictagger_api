@@ -87,6 +87,7 @@ public class UserController {
             response = new ResponseEntity(HttpStatus.CREATED);
         }
         catch (RuntimeException e){
+            System.out.println(e);
             response = new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);
         }
         return response;

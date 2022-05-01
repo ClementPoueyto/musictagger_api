@@ -156,11 +156,19 @@ public class SpotifyService implements ISpotifyAPI {
     }
 
     @Override
-    public SpotifyPlaylist createPlaylist(String name, UserEntity user, PlaylistEntity playlistEntity){
+    public SpotifyPlaylist createPlaylist(String name, UserEntity user, PlaylistEntity playlistEntity, String description){
         String accessToken = getSpotifyAccessToken(user);
-        SpotifyPlaylist checkExisting = checkExistingUserPlaylist(accessToken, playlistEntity);
-        if(checkExisting.getId().equals(playlistEntity.getSpotifyPlaylistEmbedded().getSpotifyPlaylistId())) return checkExisting;
-        ResponseEntity<String> responseCreation = preparePostCreatePlaylistRequest(SPOTIFY_URL + "users/" + user.getSpotifyUser().getSpotifyId() + "/playlists", accessToken, new SpotifyPlaylistCreation(name, false, false, ""));
+        if(playlistEntity!=null) {
+            SpotifyPlaylist checkExisting = checkExistingUserPlaylist(accessToken, playlistEntity);
+            if (checkExisting != null && checkExisting.getId().equals(playlistEntity.getSpotifyPlaylistEmbedded().getSpotifyPlaylistId())) {
+                ResponseEntity<String> responseCreation = prepareUpdatePlaylistInfoRequest(SPOTIFY_URL + "playlists/" + playlistEntity.getSpotifyPlaylistEmbedded().getSpotifyPlaylistId(), accessToken, new SpotifyPlaylistCreation(name, false, false, description));
+                if (responseCreation.getStatusCode() == HttpStatus.OK) {
+                    return checkExisting;
+                }
+                throw new RuntimeException("info non mises a jour");
+            }
+        }
+        ResponseEntity<String> responseCreation = preparePostCreatePlaylistRequest(SPOTIFY_URL + "users/" + user.getSpotifyUser().getSpotifyId() + "/playlists", accessToken, new SpotifyPlaylistCreation(name, false, false, description));
         try {
             return objectMapper.readValue(responseCreation.getBody(), SpotifyPlaylist.class);
         } catch (JsonProcessingException e) {
@@ -185,7 +193,7 @@ public class SpotifyService implements ISpotifyAPI {
                 }
             }
         }
-        throw new RuntimeException("cant check playlist, uri null");
+        return null;
     }
 
     private ResponseEntity<String> prepareGetRequest(String url, String accessToken){
@@ -196,6 +204,11 @@ public class SpotifyService implements ISpotifyAPI {
     private ResponseEntity<String> preparePostCreatePlaylistRequest(String url, String accessToken, SpotifyPlaylistCreation spotifyPlaylistCreation){
         HttpEntity<SpotifyPlaylistCreation> request = new HttpEntity<SpotifyPlaylistCreation>(spotifyPlaylistCreation,getHttpHeader(accessToken));
         return this.restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+    }
+
+    private ResponseEntity<String> prepareUpdatePlaylistInfoRequest(String url, String accessToken, SpotifyPlaylistCreation spotifyPlaylistCreation){
+        HttpEntity<SpotifyPlaylistCreation> request = new HttpEntity<SpotifyPlaylistCreation>(spotifyPlaylistCreation,getHttpHeader(accessToken));
+        return this.restTemplate.exchange(url, HttpMethod.PUT, request, String.class);
     }
 
     private ResponseEntity<String> prepareAddItemPlaylistRequest(String url, String accessToken, SpotifyPlaylistItemAdd spotifyPlaylistItemUpdate){
