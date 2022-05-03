@@ -1,5 +1,8 @@
 package com.mencelt.musictag.component;
 
+import com.mencelt.musictag.apierror.exceptions.EmptyPlaylistGenerationException;
+import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
+import com.mencelt.musictag.apierror.exceptions.MissingFieldException;
 import com.mencelt.musictag.dto.user.SpotifyUserForm;
 import com.mencelt.musictag.dto.user.UserForm;
 import com.mencelt.musictag.entities.*;
@@ -37,29 +40,29 @@ public class UserBean implements IUserManager{
     ISpotifyAPI spotifyAPI;
 
     @Override
-    public UserEntity getUserBydId(String id) {
+    public UserEntity getUserBydId(String id) throws EntityNotFoundException{
         UserEntity user = userRepository.findUserEntityById(id);
         if(user==null){
-            throw new RuntimeException("user not found with id : "+id);
+            throw new EntityNotFoundException(UserEntity.class,"id", id);
         }
         return user;
     }
 
     @Override
-    public SpotifyUserEmbedded getSpotifyUserBydId(String id) {
+    public SpotifyUserEmbedded getSpotifyUserBydId(String id) throws EntityNotFoundException{
         UserEntity user = userRepository.findUserEntityById(id);
         if(user==null){
-            throw new RuntimeException("user not found with id : "+id);
+            throw new EntityNotFoundException(UserEntity.class,"id", id);
         }
         if(user.getSpotifyUser()==null){
-            throw new RuntimeException("spotify user not found");
+            throw new EntityNotFoundException(SpotifyUser.class,"id", id);
         }
         return user.getSpotifyUser();    }
 
     @Override
     public UserEntity createUser(UserForm user) {
         if(user.getId()==null){
-            throw new RuntimeException("id is non null fields");
+            throw new MissingFieldException(UserForm.class, "id");
         }
         else{
             System.out.println(user);
@@ -77,9 +80,9 @@ public class UserBean implements IUserManager{
     }
 
     @Override
-    public SpotifyUserEmbedded connectToSpotify(String id, SpotifyUserForm userForm) {
+    public SpotifyUserEmbedded connectToSpotify(String id, SpotifyUserForm userForm) throws EntityNotFoundException{
         UserEntity user = this.userRepository.findUserEntityById(id);
-        if(user==null) throw new RuntimeException("utilisateur inconnu");
+        if(user==null) throw new EntityNotFoundException(UserEntity.class, "id", id);
 
         SpotifyUserEmbedded spotifyUserEmbedded = new SpotifyUserEmbedded();
         spotifyUserEmbedded.setSpotifyAccessToken(userForm.getAccessToken());
@@ -95,7 +98,7 @@ public class UserBean implements IUserManager{
     }
 
     @Override
-    public List<TrackEntity> importTracksFromSpotify(String id) {
+    public List<TrackEntity> importTracksFromSpotify(String id) throws EntityNotFoundException{
         UserEntity user = getUserBydId(id);
         List<SpotifyLike> spotifyLikes = spotifyAPI.importTracksFromSpotify(user);
         Map<TrackEntity, Timestamp> tracks = trackManager.importTrack(spotifyLikes);
@@ -111,14 +114,9 @@ public class UserBean implements IUserManager{
     @Override
     public void generatePlaylist(String userId, List<String> tags) {
         UserEntity user = getUserBydId(userId);
-        List<TagEntity> trackTagged = new ArrayList<>();
-        try {
-            trackTagged = tagManager.getUserTags(userId, "", Integer.MAX_VALUE, 0, tags);
-        } catch (NotFoundException e) {
-            e.printStackTrace();
-        }
+        List<TagEntity> trackTagged = tagManager.getUserTags(userId, "", Integer.MAX_VALUE, 0, tags);
         PlaylistEntity playlistEntity = playlistManager.getPlaylist(userId);
-        if(trackTagged.isEmpty()) throw new RuntimeException("playlist empty");
+        if(trackTagged.isEmpty()) throw new EmptyPlaylistGenerationException(tags);
         List<String> spotifyIdTracks = trackTagged.stream().map(TagEntity::getTrack).map(TrackEntity::getSpotifyTrack).map(SpotifyTrackEmbedded::getUri).collect(Collectors.toList());
         System.out.println(spotifyIdTracks);
         SpotifyPlaylist playlist = spotifyAPI.createPlaylist("MusicTag",user,playlistEntity, "Playlist générée avec les tags : "+tags.toString());

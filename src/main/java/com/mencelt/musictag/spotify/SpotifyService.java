@@ -2,6 +2,9 @@ package com.mencelt.musictag.spotify;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
+import com.mencelt.musictag.apierror.exceptions.MissingFieldException;
+import com.mencelt.musictag.apierror.exceptions.NoSpotifyConnectionException;
 import com.mencelt.musictag.entities.*;
 import com.mencelt.musictag.spotify.account.ISpotifyAccountAPI;
 import com.mencelt.musictag.spotify.dto.*;
@@ -80,7 +83,7 @@ public class SpotifyService implements ISpotifyAPI {
     @Override
     public ResponsePlaylistItem addItemPlaylist(UserEntity user, List<String> tracksURI, String playlistId) {
         String accessToken = getSpotifyAccessToken(user);
-        if(user.getSpotifyUser().getSpotifyId()==null) throw new RuntimeException("Spotify Id null");
+        if(user.getSpotifyUser().getSpotifyId()==null) throw new NoSpotifyConnectionException(user.getId());
         try{
            ResponseEntity<String> responseUpdate = prepareAddItemPlaylistRequest(SPOTIFY_URL + "playlists/"+playlistId+"/tracks", accessToken, new SpotifyPlaylistItemAdd( tracksURI, 0));
             ResponsePlaylistItem responsePlaylistUpdate = objectMapper.readValue(responseUpdate.getBody(), ResponsePlaylistItem.class);
@@ -102,7 +105,7 @@ public class SpotifyService implements ISpotifyAPI {
     @Override
     public ResponsePlaylistItem updateItemPlaylist(UserEntity user, List<String> tracksUri, String playlistId, String snapshotId, int rangeStart, int rangeLength, int insertBefore) {
         String accessToken = getSpotifyAccessToken(user);
-        if(user.getSpotifyUser().getSpotifyId()==null) throw new RuntimeException("Spotify Id null");
+        if(user.getSpotifyUser().getSpotifyId()==null) throw new NoSpotifyConnectionException(user.getId());
         ResponsePlaylistItem responsePlaylistUpdate = null;
         boolean doRequest = true;
         try {

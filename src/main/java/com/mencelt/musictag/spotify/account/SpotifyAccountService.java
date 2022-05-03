@@ -2,9 +2,13 @@ package com.mencelt.musictag.spotify.account;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
+import com.mencelt.musictag.apierror.exceptions.MissingFieldException;
+import com.mencelt.musictag.apierror.exceptions.NoSpotifyConnectionException;
 import com.mencelt.musictag.entities.UserEntity;
 import com.mencelt.musictag.repository.UserRepository;
 import com.mencelt.musictag.spotify.dto.SpotifyRefreshToken;
+import com.mencelt.musictag.spotify.dto.SpotifyUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -37,7 +41,8 @@ public class SpotifyAccountService implements ISpotifyAccountAPI {
 
     @Override
     public String refreshToken(UserEntity user) {
-        if(user==null||user.getSpotifyUser()==null) throw new RuntimeException("no spotify account on user");
+        if(user==null) throw new MissingFieldException(UserEntity.class, "user");
+        if(user.getSpotifyUser()==null) throw new NoSpotifyConnectionException(user.getId());
         ResponseEntity<String> response = prepareRequest(SPOTIFY_ACCOUNT_URL + "token", user.getSpotifyUser().getSpotifyRefreshToken());
         try {
             SpotifyRefreshToken refreshedToken = objectMapper.readValue(response.getBody(), SpotifyRefreshToken.class);

@@ -1,5 +1,6 @@
 package com.mencelt.musictag.component;
 
+import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
 import com.mencelt.musictag.entities.PlaylistEntity;
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.entities.UserEntity;
@@ -23,8 +24,8 @@ public class PlaylistBean implements IPlaylistManager {
     IPlaylistMapper playlistMapper;
 
     @Override
-    public PlaylistEntity getPlaylist(String userId) throws RuntimeException {
-        if(userId==null) throw new RuntimeException("user id null");
+    public PlaylistEntity getPlaylist(String userId) throws EntityNotFoundException {
+        if(userId==null) throw new EntityNotFoundException(PlaylistEntity.class, "userId", userId);
         return playlistRepository.findByUserId(userId);
 
     }

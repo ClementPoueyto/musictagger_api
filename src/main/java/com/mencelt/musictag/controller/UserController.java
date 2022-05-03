@@ -1,22 +1,20 @@
 package com.mencelt.musictag.controller;
 
+import com.google.api.gax.rpc.UnauthenticatedException;
+import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
+import com.mencelt.musictag.apierror.exceptions.UnauthrorizedUserException;
 import com.mencelt.musictag.component.IUserManager;
 import com.mencelt.musictag.dto.user.SpotifyUserForm;
 import com.mencelt.musictag.dto.user.UserForm;
 import com.mencelt.musictag.entities.SpotifyUserEmbedded;
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.entities.UserEntity;
-import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
-@CrossOrigin
-@Controller
+@RestController
 public class UserController {
 
     @Autowired
@@ -24,72 +22,50 @@ public class UserController {
 
     @GetMapping(value = "/users/{id}")
     @ResponseBody
-    public ResponseEntity<UserEntity> getUserById(@PathVariable String id) throws NotFoundException {
-        ResponseEntity response;
-        try{
-            UserEntity user = userManager.getUserBydId(id);
-            response = new ResponseEntity(user, HttpStatus.OK);
+    public UserEntity getUserById(Authentication authentication, @PathVariable String id) throws EntityNotFoundException {
+        if(!authentication.getName().equals(id)){
+            throw new UnauthrorizedUserException(id);
         }
-        catch (RuntimeException e){
-            response = new ResponseEntity(e.getMessage(),HttpStatus.NOT_FOUND);
-        }
-        return response;
+        return userManager.getUserBydId(id);
     }
 
     @PostMapping(value = "/users")
     @ResponseBody
-    public ResponseEntity<UserEntity> createUser(@RequestBody UserForm userForm) {
-        ResponseEntity<UserEntity> response;
-        try{
-            UserEntity user = userManager.createUser(userForm);
-            response = new ResponseEntity(user,HttpStatus.OK);
+    public UserEntity createUser(Authentication authentication, @RequestBody UserForm userForm) {
+        if(!authentication.getName().equals(userForm.getId())){
+            throw new UnauthrorizedUserException(userForm.getId());
         }
-        catch (RuntimeException e){
-            response = new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);
-        }
-        return response;
+        return userManager.createUser(userForm);
+
     }
 
     @PostMapping(value = "/users/{id}/spotify/connect")
     @ResponseBody
-    public ResponseEntity<SpotifyUserEmbedded> connectToSpotify(@RequestBody SpotifyUserForm userForm, @PathVariable String id) {
-        ResponseEntity<SpotifyUserEmbedded> response;
-        try{
-            SpotifyUserEmbedded user = userManager.connectToSpotify(id,userForm);
-            response = new ResponseEntity(user,HttpStatus.OK);
+    public SpotifyUserEmbedded connectToSpotify(Authentication authentication,@RequestBody SpotifyUserForm userForm, @PathVariable String id) throws EntityNotFoundException{
+        if(!authentication.getName().equals(id)){
+            throw new UnauthrorizedUserException(id);
         }
-        catch (RuntimeException e){
-            response = new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);
-        }
-        return response;
+        return userManager.connectToSpotify(id,userForm);
+
     }
 
     @GetMapping(value = "/users/{id}/spotify/import")
     @ResponseBody
-    public ResponseEntity<List<TrackEntity>> exportTracksFromSpotify(@PathVariable String id) {
-        ResponseEntity<List<TrackEntity>> response;
-        try{
-            List<TrackEntity> tracks = userManager.importTracksFromSpotify(id);
-            response = new ResponseEntity(tracks,HttpStatus.OK);
+    public List<TrackEntity> exportTracksFromSpotify(Authentication authentication,@PathVariable String id) throws EntityNotFoundException{
+        if(!authentication.getName().equals(id)){
+            throw new UnauthrorizedUserException(id);
         }
-        catch (RuntimeException e){
-            response = new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);
-        }
-        return response;
+        return userManager.importTracksFromSpotify(id);
+
     }
 
     @PostMapping (value = "/users/{id}/spotify/playlists")
     @ResponseBody
-    public ResponseEntity generateSpotifyPlaylist(@PathVariable String id, @RequestBody List<String> tags ) {
-        ResponseEntity response;
-        try{
-            userManager.generatePlaylist(id, tags);
-            response = new ResponseEntity(HttpStatus.CREATED);
+    public void generateSpotifyPlaylist(Authentication authentication,@PathVariable String id, @RequestBody List<String> tags ) throws EntityNotFoundException {
+        if(!authentication.getName().equals(id)){
+            throw new UnauthrorizedUserException(id);
         }
-        catch (RuntimeException e){
-            System.out.println(e);
-            response = new ResponseEntity(e.getMessage(),HttpStatus.BAD_REQUEST);
-        }
-        return response;
+        userManager.generatePlaylist(id, tags);
+
     }
 }

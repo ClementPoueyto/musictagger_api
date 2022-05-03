@@ -1,5 +1,7 @@
 package com.mencelt.musictag.component;
 
+import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
+import com.mencelt.musictag.apierror.exceptions.MissingFieldException;
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.repository.TrackRepository;
 import com.mencelt.musictag.spotify.dto.SpotifyLike;
@@ -26,7 +28,7 @@ public class TrackBean implements ITrackManager{
     public TrackEntity addTrack(TrackEntity trackEntity)  {
         System.out.println(trackEntity.toString());
         if(trackEntity.getArtists()==null||trackEntity.getName()==null){
-            throw new RuntimeException("artist and name are non null fields");
+            throw new MissingFieldException(TrackEntity.class, "Artists", "Name");
         }
         else{
             TrackEntity existing = trackRepository.findTrackEntityByNameAndArtistNameAndAlbumName(trackEntity.getName(),trackEntity.getArtistName(), trackEntity.getAlbumName());
@@ -49,10 +51,10 @@ public class TrackBean implements ITrackManager{
     }
 
     @Override
-    public TrackEntity getTrackById(long id) throws NotFoundException {
+    public TrackEntity getTrackById(long id) throws EntityNotFoundException {
         TrackEntity track = trackRepository.findTrackEntityById(id);
         if(track==null){
-            throw new RuntimeException("track not found with id : "+id);
+            throw new EntityNotFoundException(TrackEntity.class, "id", String.valueOf(id));
         }
        return track;
     }
