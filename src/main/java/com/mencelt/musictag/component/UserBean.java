@@ -117,7 +117,7 @@ public class UserBean implements IUserManager{
         List<TagEntity> trackTagged = tagManager.getUserTags(userId, "", Integer.MAX_VALUE, 0, tags);
         PlaylistEntity playlistEntity = playlistManager.getPlaylist(userId);
         if(trackTagged.isEmpty()) throw new EmptyPlaylistGenerationException(tags);
-        List<String> spotifyIdTracks = trackTagged.stream().map(TagEntity::getTrack).map(TrackEntity::getSpotifyTrack).map(SpotifyTrackEmbedded::getUri).collect(Collectors.toList());
+        List<String> spotifyIdTracks = trackTagged.stream().map(TagEntity::getTrack).map(TrackEntity::getSpotifyTrack).map(SpotifyTrackEmbedded::getUri).filter(Objects::nonNull).collect(Collectors.toList());
         System.out.println(spotifyIdTracks);
         SpotifyPlaylist playlist = spotifyAPI.createPlaylist("MusicTag",user,playlistEntity, "Playlist générée avec les tags : "+tags.toString());
         ResponsePlaylistItem responsePlaylistItem = spotifyAPI.updateItemPlaylist(user, spotifyIdTracks, playlist.getId(), playlist.getSnapshot_id(),0,1,0);

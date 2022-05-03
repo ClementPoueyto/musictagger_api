@@ -28,7 +28,7 @@ public class TagController {
 
     @PostMapping(value = "/tags")
     @ResponseBody
-    public void addTag(Authentication authentication, @RequestBody TagForm tagForm) throws MissingServletRequestParameterException, UnauthrorizedUserException {
+    public ResponseEntity addTag(Authentication authentication, @RequestBody TagForm tagForm) throws MissingServletRequestParameterException, UnauthrorizedUserException {
         if(tagForm.getTags()==null||tagForm.getTags().size()<1){
             throw new MissingFieldException(TagForm.class,"tags");
         }
@@ -40,10 +40,11 @@ public class TagController {
         }
 
         tagManager.addTag(tagForm);
+        return new ResponseEntity(HttpStatus.CREATED);
 
     }
 
-    @PostMapping(value = "/tags/{id}")
+    @PutMapping(value = "/tags/{id}")
     @ResponseBody
     public void updateTagsToTrack(Authentication authentication, @PathVariable long id, @RequestParam String userId , @RequestBody List<String> tagsName) throws EntityNotFoundException {
         if(!authentication.getName().equals(userId)){

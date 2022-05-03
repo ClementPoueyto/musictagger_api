@@ -26,7 +26,7 @@ public class PlaylistEntity {
     @ElementCollection
     private Set<String> tags = new HashSet<>();
 
-    @OneToMany
+    @ManyToMany
     private Set<TrackEntity> tracks  = new HashSet<>();
 
     @Embedded

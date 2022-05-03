@@ -98,7 +98,6 @@ public class SpotifyService implements ISpotifyAPI {
         catch (Exception e){
             System.out.println(e);
             throw new RuntimeException("Creation playlist error");
-
         }
     }
 
@@ -121,6 +120,7 @@ public class SpotifyService implements ISpotifyAPI {
                     responseUpdate = prepareAddItemPlaylistRequest(
                             SPOTIFY_URL + "playlists/" + playlistId + "/tracks", accessToken, new SpotifyPlaylistItemAdd(tracksUri.subList(offset * limit, Math.min(tracksUri.size(), (offset + 1) * limit)),Math.min(tracksUri.size(), offset * limit)));
                 }
+                System.out.println(responseUpdate.getStatusCode());
                 if (responseUpdate.getStatusCode() == HttpStatus.CREATED) {
                     responsePlaylistUpdate = objectMapper.readValue(responseUpdate.getBody(), ResponsePlaylistItem.class);
                     System.out.println(responsePlaylistUpdate);

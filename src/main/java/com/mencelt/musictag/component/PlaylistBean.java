@@ -34,7 +34,7 @@ public class PlaylistBean implements IPlaylistManager {
     public PlaylistEntity create(SpotifyPlaylist playlist, Set<TrackEntity> tracks, UserEntity user) {
         PlaylistEntity existing = playlistRepository.findByUserId(user.getId());
         PlaylistEntity playlistEntity = playlistMapper.toEntity(playlist);
-        if(existing!=null) playlistEntity.setId(existing.getId());
+        if(existing!=null) {playlistEntity.setId(existing.getId());}
         playlistEntity.setUserId(user.getId());
         playlistEntity.setTracks(tracks);
         this.playlistRepository.save(playlistEntity);

@@ -9,7 +9,10 @@ import com.mencelt.musictag.dto.user.UserForm;
 import com.mencelt.musictag.entities.SpotifyUserEmbedded;
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.entities.UserEntity;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -59,13 +62,12 @@ public class UserController {
 
     }
 
-    @PostMapping (value = "/users/{id}/spotify/playlists")
+    @PutMapping (value = "/users/{id}/spotify/playlists")
     @ResponseBody
-    public void generateSpotifyPlaylist(Authentication authentication,@PathVariable String id, @RequestBody List<String> tags ) throws EntityNotFoundException {
+    public void generateSpotifyPlaylist(Authentication authentication, @PathVariable String id, @RequestBody List<String> tags ) throws EntityNotFoundException {
         if(!authentication.getName().equals(id)){
             throw new UnauthrorizedUserException(id);
         }
         userManager.generatePlaylist(id, tags);
-
     }
 }
