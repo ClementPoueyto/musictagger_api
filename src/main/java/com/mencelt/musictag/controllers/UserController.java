@@ -1,18 +1,16 @@
-package com.mencelt.musictag.controller;
+package com.mencelt.musictag.controllers;
 
-import com.google.api.gax.rpc.UnauthenticatedException;
 import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
 import com.mencelt.musictag.apierror.exceptions.UnauthrorizedUserException;
-import com.mencelt.musictag.component.IUserManager;
-import com.mencelt.musictag.dto.user.SpotifyUserForm;
-import com.mencelt.musictag.dto.user.UserForm;
+import com.mencelt.musictag.components.IUserService;
+import com.mencelt.musictag.dto.tracks.TrackDto;
+import com.mencelt.musictag.dto.users.SpotifyUserForm;
+import com.mencelt.musictag.dto.users.UserDto;
+import com.mencelt.musictag.dto.users.UserForm;
 import com.mencelt.musictag.entities.SpotifyUserEmbedded;
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.entities.UserEntity;
-import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -22,11 +20,11 @@ import java.util.List;
 public class UserController {
 
     @Autowired
-    IUserManager userManager;
+    IUserService userManager;
 
     @GetMapping(value = "/users/{id}")
     @ResponseBody
-    public UserEntity getUserById(Authentication authentication, @PathVariable String id) throws EntityNotFoundException {
+    public UserDto getUserById(Authentication authentication, @PathVariable String id) throws EntityNotFoundException {
         if(!authentication.getName().equals(id)){
             throw new UnauthrorizedUserException(id);
         }
@@ -35,7 +33,7 @@ public class UserController {
 
     @PostMapping(value = "/users")
     @ResponseBody
-    public UserEntity createUser(Authentication authentication, @RequestBody UserForm userForm) {
+    public UserDto createUser(Authentication authentication, @RequestBody UserForm userForm) {
         if(!authentication.getName().equals(userForm.getId())){
             throw new UnauthrorizedUserException(userForm.getId());
         }
@@ -55,7 +53,7 @@ public class UserController {
 
     @GetMapping(value = "/users/{id}/spotify/import")
     @ResponseBody
-    public List<TrackEntity> exportTracksFromSpotify(Authentication authentication,@PathVariable String id) throws EntityNotFoundException{
+    public List<TrackDto> exportTracksFromSpotify(Authentication authentication, @PathVariable String id) throws EntityNotFoundException{
         if(!authentication.getName().equals(id)){
             throw new UnauthrorizedUserException(id);
         }

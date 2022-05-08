@@ -1,27 +1,30 @@
-package com.mencelt.musictag.component;
+package com.mencelt.musictag.components;
 
 import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
-import com.mencelt.musictag.dto.music.TagForm;
+import com.mencelt.musictag.dto.dtomapping.TagMapper;
+import com.mencelt.musictag.dto.tags.TagDto;
+import com.mencelt.musictag.dto.tags.TagForm;
 import com.mencelt.musictag.entities.TagEntity;
 import com.mencelt.musictag.entities.TrackEntity;
 import com.mencelt.musictag.repository.TagRepository;
 import com.mencelt.musictag.repository.specifications.TagSpecification;
-import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Component
-public class TagBean implements ITagManager {
+@Service
+public class TagServiceImpl implements ITagService {
 
     @Autowired
-    private ITrackManager trackService;
+    private TagMapper tagMapper;
+
+    @Autowired
+    private ITrackService trackService;
 
     @Autowired
     private TagRepository tagRepository;
@@ -40,7 +43,7 @@ public class TagBean implements ITagManager {
             tagNames.replaceAll(x->x.replaceAll("\"",""));
             tagNames.replaceAll(x->x.replaceAll(",",""));
 
-            trackEntity = trackService.getTrackById(tagForm.getTrackId());
+            trackEntity = trackService.getTrackEntityById(tagForm.getTrackId());
 
             if(trackEntity==null) throw new EntityNotFoundException(TrackEntity.class, "id", String.valueOf(tagForm.getTrackId()));
             TagEntity existing = tagRepository.findTagEntityByUserIdAndTrack(tagForm.getUserId(), trackEntity);
@@ -56,12 +59,12 @@ public class TagBean implements ITagManager {
     }
 
     @Override
-    public TagEntity getTagById(long id) throws EntityNotFoundException {
+    public TagDto getTagById(long id) throws EntityNotFoundException {
         TagEntity tag = tagRepository.findTagEntityById(id);
         if(tag==null){
             throw new EntityNotFoundException(TagEntity.class, "id", String.valueOf(id));
         }
-        return tag;
+        return tagMapper.toDto(tag);
     }
 
     @Override
@@ -89,7 +92,7 @@ public class TagBean implements ITagManager {
 
 
     @Override
-    public List<TagEntity> getUserTags(String userId, String query, int limit, int page, List<String> filters) {
+    public List<TagDto> getUserTags(String userId, String query, int limit, int page, List<String> filters) {
         List<TagEntity> tags;
         query = query.replaceAll("\"","");
         query = query.replaceAll("'","");
@@ -105,7 +108,7 @@ public class TagBean implements ITagManager {
         else{
             tags = tagRepository.findAll(tagSpecification.searchTags(userId, query, filters), PageRequest.of(page,limit, Sort.by(Sort.Direction.DESC,"addedAt"))).toList();
         }
-        return tags;
+        return tags.stream().map(tagMapper::toDto).collect(Collectors.toList());
     }
 
     @Override

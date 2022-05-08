@@ -1,6 +1,5 @@
-package com.mencelt.musictag.dto.music;
+package com.mencelt.musictag.dto.tags;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 

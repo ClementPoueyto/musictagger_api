@@ -1,22 +1,18 @@
-package com.mencelt.musictag.controller;
+package com.mencelt.musictag.controllers;
 
 import com.mencelt.musictag.apierror.exceptions.EntityNotFoundException;
 import com.mencelt.musictag.apierror.exceptions.MissingFieldException;
 import com.mencelt.musictag.apierror.exceptions.UnauthrorizedUserException;
-import com.mencelt.musictag.component.ITagManager;
-import com.mencelt.musictag.dto.music.TagForm;
+import com.mencelt.musictag.components.ITagService;
+import com.mencelt.musictag.dto.tags.TagDto;
+import com.mencelt.musictag.dto.tags.TagForm;
 import com.mencelt.musictag.entities.TagEntity;
-import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.util.List;
 
@@ -25,7 +21,7 @@ import java.util.List;
 public class TagController {
 
     @Autowired
-    ITagManager tagManager;
+    ITagService tagManager;
 
     @PostMapping(value = "/tags")
     public ResponseEntity addTag(Authentication authentication, @RequestBody TagForm tagForm) throws MissingServletRequestParameterException, UnauthrorizedUserException {
@@ -55,13 +51,13 @@ public class TagController {
 
 
     @GetMapping(value = "/tags/{id}")
-    public TagEntity getTagById(@PathVariable long id) throws EntityNotFoundException {
+    public TagDto getTagById(@PathVariable long id) throws EntityNotFoundException {
         return tagManager.getTagById(id);
     }
 
 
     @GetMapping(value = "/tags")
-    public List<TagEntity> getUserTags(Authentication authentication, @RequestParam String userId, @RequestParam int page, @RequestParam String query, @RequestParam int limit, @RequestParam List<String> filters) throws EntityNotFoundException {
+    public List<TagDto> getUserTags(Authentication authentication, @RequestParam String userId, @RequestParam int page, @RequestParam String query, @RequestParam int limit, @RequestParam List<String> filters) throws EntityNotFoundException {
         if(!authentication.getName().equals(userId)){
             throw new UnauthrorizedUserException(userId);
         }

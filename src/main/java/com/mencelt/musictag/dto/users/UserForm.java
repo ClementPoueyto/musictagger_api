@@ -1,4 +1,4 @@
-package com.mencelt.musictag.dto.user;
+package com.mencelt.musictag.dto.users;
 
 public class UserForm {
 

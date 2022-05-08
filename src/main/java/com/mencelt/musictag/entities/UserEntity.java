@@ -1,6 +1,6 @@
 package com.mencelt.musictag.entities;
 
-import com.mencelt.musictag.dto.user.UserForm;
+import com.mencelt.musictag.dto.users.UserForm;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -16,7 +16,6 @@ public class UserEntity {
 
     @Column(name = "display_name")
     private String displayName;
-
 
     @Embedded
     private SpotifyUserEmbedded spotifyUserEmbedded;

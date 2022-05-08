@@ -1,11 +1,9 @@
-package com.mencelt.musictag.controller;
-import com.mencelt.musictag.component.ITrackManager;
+package com.mencelt.musictag.controllers;
+import com.mencelt.musictag.components.ITrackService;
+import com.mencelt.musictag.dto.tracks.TrackDto;
 import com.mencelt.musictag.entities.TrackEntity;
 import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin
@@ -13,13 +11,13 @@ import org.springframework.web.bind.annotation.*;
 public class TrackController {
 
     @Autowired
-    ITrackManager trackManager;
+    ITrackService trackManager;
 
 
 
     @PostMapping (value = "/track")
     @ResponseBody
-    public TrackEntity addTrack(@RequestBody TrackEntity query) throws RuntimeException {
+    public TrackDto addTrack(@RequestBody TrackEntity query) throws RuntimeException {
         return trackManager.addTrack(query);
 
     }
@@ -27,7 +25,7 @@ public class TrackController {
 
     @GetMapping(value = "/track/{id}")
     @ResponseBody
-    public TrackEntity getTrackById(@PathVariable long id) throws NotFoundException {
+    public TrackDto getTrackById(@PathVariable long id) throws NotFoundException {
         return trackManager.getTrackById(id);
     }
 
