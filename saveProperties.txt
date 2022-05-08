@@ -4,17 +4,20 @@ logging.level.com.zaxxer=DEBUG
 logging.level.root=ERROR
 logging.level.org.hibernate.SQL=DEBUG
 
-
-spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.url=jdbc:postgresql://localhost:5432/musictag
+spring.datasource.username=postgres
+spring.datasource.password=admin
+spring.datasource.driver-class-name=org.postgresql.Driver
 
 
 # Cloud SQL starter automatically configures the JDBC URL
+spring.cloud.gcp.sql.instance-connection-name=music-tagger-f7265:europe-west1:musictagger-1-0-storage
+spring.cloud.gcp.sql.database-name=postgres
+spring.cloud.gcp.sql.userName=postgres
+spring.cloud.gcp.sql.password=musictaggeradmin
 
-spring.datasource.username=postgres
-spring.datasource.password=${DB_PASSWORD}
+spring.cloud.gcp.logging.enabled=true
 
-spring.datasource.url=${DATASOURCE_URL}
-spring.datasource.driver-class-name=org.postgresql.Driver
 
 spring.jpa.show-sql=true
 spring.datasource.dbcp2.test-while-idle=true

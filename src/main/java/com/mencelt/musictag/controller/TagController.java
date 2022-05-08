@@ -20,14 +20,14 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 
 import java.util.List;
 
-@Controller
+@CrossOrigin(origins = "*")
+@RestController
 public class TagController {
 
     @Autowired
     ITagManager tagManager;
 
     @PostMapping(value = "/tags")
-    @ResponseBody
     public ResponseEntity addTag(Authentication authentication, @RequestBody TagForm tagForm) throws MissingServletRequestParameterException, UnauthrorizedUserException {
         if(tagForm.getTags()==null||tagForm.getTags().size()<1){
             throw new MissingFieldException(TagForm.class,"tags");
@@ -45,7 +45,6 @@ public class TagController {
     }
 
     @PutMapping(value = "/tags/{id}")
-    @ResponseBody
     public void updateTagsToTrack(Authentication authentication, @PathVariable long id, @RequestParam String userId , @RequestBody List<String> tagsName) throws EntityNotFoundException {
         if(!authentication.getName().equals(userId)){
             throw new UnauthrorizedUserException(userId);
@@ -56,14 +55,12 @@ public class TagController {
 
 
     @GetMapping(value = "/tags/{id}")
-    @ResponseBody
     public TagEntity getTagById(@PathVariable long id) throws EntityNotFoundException {
         return tagManager.getTagById(id);
     }
 
 
     @GetMapping(value = "/tags")
-    @ResponseBody
     public List<TagEntity> getUserTags(Authentication authentication, @RequestParam String userId, @RequestParam int page, @RequestParam String query, @RequestParam int limit, @RequestParam List<String> filters) throws EntityNotFoundException {
         if(!authentication.getName().equals(userId)){
             throw new UnauthrorizedUserException(userId);
@@ -75,7 +72,6 @@ public class TagController {
     }
 
     @GetMapping(value = "/tags/names")
-    @ResponseBody
     public List<String> getUserTagsName(@RequestParam String userId) throws EntityNotFoundException {
        return tagManager.getUserTagsName(userId);
     }
