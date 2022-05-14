@@ -123,7 +123,7 @@ public class UserServiceImpl implements IUserService {
 
 
     @Override
-    public void generatePlaylist(String userId, List<String> tags) {
+    public String generatePlaylist(String userId, List<String> tags) {
         UserEntity user = getUserEntityBydId(userId);
         List<TagDto> trackTagged = tagManager.getUserTags(userId, "", Integer.MAX_VALUE, 0, tags);
         PlaylistEntity playlistEntity = playlistManager.getPlaylist(userId);
@@ -134,7 +134,7 @@ public class UserServiceImpl implements IUserService {
         ResponsePlaylistItem responsePlaylistItem = spotifyAPI.updateItemPlaylist(user, spotifyIdTracks, playlist.getId(), playlist.getSnapshot_id(),0,1,0);
         playlist.setSnapshot_id(responsePlaylistItem.getSnapshot_id());
         playlistManager.create(playlist, trackTagged.stream().map(TagDto::getTrack).collect(Collectors.toSet()), userMapper.toDto(user));
-
+        return playlist.getUri();
 
     }
 

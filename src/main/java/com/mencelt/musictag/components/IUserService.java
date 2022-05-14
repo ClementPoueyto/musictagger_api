@@ -25,5 +25,5 @@ public interface IUserService {
 
     public List<TrackDto> importTracksFromSpotify(String id) throws EntityNotFoundException;
 
-    public void generatePlaylist(String userId, List<String> tags) throws EntityNotFoundException;
+    public String generatePlaylist(String userId, List<String> tags) throws EntityNotFoundException;
 }

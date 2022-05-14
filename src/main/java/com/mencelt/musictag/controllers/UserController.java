@@ -71,10 +71,10 @@ public class UserController {
 
     @PutMapping (value = "/users/{id}/spotify/playlists")
     @ResponseBody
-    public void generateSpotifyPlaylist(Authentication authentication, @PathVariable String id, @RequestBody List<String> tags ) throws EntityNotFoundException {
+    public String generateSpotifyPlaylist(Authentication authentication, @PathVariable String id, @RequestBody List<String> tags ) throws EntityNotFoundException {
         if(!authentication.getName().equals(id)){
             throw new UnauthrorizedUserException(id);
         }
-        userManager.generatePlaylist(id, tags);
+        return userManager.generatePlaylist(id, tags);
     }
 }
