@@ -17,7 +17,6 @@ public class UserMapper implements IMapper<UserEntity, UserDto> {
     public UserDto toDto(UserEntity entity) {
         UserDto userDto = new UserDto();
         userDto.setId(entity.getId());
-        userDto.setDisplayName(entity.getDisplayName());
         userDto.setTagList(entity.getTagList());
         if(entity.getSpotifyUser()!=null){
             SpotifyUserEmbedded embedded = entity.getSpotifyUser();

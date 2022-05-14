@@ -28,7 +28,15 @@ public class UserController {
         if(!authentication.getName().equals(id)){
             throw new UnauthrorizedUserException(id);
         }
-        return userManager.getUserBydId(id);
+        UserDto user;
+        try{
+           user = userManager.getUserBydId(id);
+        }catch (EntityNotFoundException e){
+            UserForm userForm = new UserForm();
+            userForm.setId(id);
+            user = createUser(authentication, userForm );
+        }
+        return user;
     }
 
     @PostMapping(value = "/users")

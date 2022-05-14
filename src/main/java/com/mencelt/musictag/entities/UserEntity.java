@@ -14,9 +14,6 @@ public class UserEntity {
     @Column(name = "id")
     private String id;
 
-    @Column(name = "display_name")
-    private String displayName;
-
     @Embedded
     private SpotifyUserEmbedded spotifyUserEmbedded;
 
@@ -28,14 +25,12 @@ public class UserEntity {
 
     public UserEntity(UserForm form) {
         this.id = form.getId();
-        this.displayName = form.getDisplayName();
     }
 
     @Override
     public String toString() {
         return "UserEntity{" +
                 "id='" + id + '\'' +
-                ", displayName='" + displayName + '\'' +
                 '}';
     }
 
@@ -58,14 +53,6 @@ public class UserEntity {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
     }
 
     public SpotifyUserEmbedded getSpotifyUser() {
