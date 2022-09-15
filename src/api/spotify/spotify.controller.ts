@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, Inject, Param, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
-import { SpotifyPaginationTracksDto } from './dto/spotify-response-saved-tracks.dto';
+import { SpotifyPaginationTracksDto } from './dto/spotify-pagination-tracks.dto';
 import { SpotifyService } from './spotify.service';
 
 @Controller('spotify')

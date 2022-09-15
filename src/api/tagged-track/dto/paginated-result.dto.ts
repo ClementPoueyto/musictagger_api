@@ -1,5 +1,5 @@
-export class PaginatedResultDto {
-    data: any[];
+export class PaginatedResultDto<T> {
+    data: T[];
     meta: {
       total: number;
       page: number;

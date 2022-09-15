@@ -2,9 +2,11 @@ import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, Pars
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { plainToClass, plainToInstance } from 'class-transformer';
 import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
+import { TrackDto } from '../track/dto/track.dto';
 import { CreateTaggedTrackDto } from './dto/create-tagged-track.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
 import { TaggedTrackDto } from './dto/tagged-track.dto';
+import { TaggedTrack } from './entities/tagged-track.entity';
 import { TaggedTrackService } from './tagged-track.service';
 
 @Controller('tags')
@@ -52,7 +54,7 @@ export class TaggedTrackController {
     @Get('pagination')
     async searchTaggedTracks(@Req() req: any,@Query('userId') userId : string, @Query('limit') limit : number = 50,
      @Query('page') page : number = 0, @Query('tags',new ParseArrayPipe({ items: String, separator: ',' })) tags: string[], @Query('query') query : string
-    ) : Promise<PaginatedResultDto> {
+    ) : Promise<PaginatedResultDto<TaggedTrack>> {
       if(!userId) throw new BadRequestException('userId missing');
       if(userId!=req.user.id) throw new UnauthorizedException();
       return await this.taggedTrackService.getTaggedTracks(userId, page, limit, tags, query);

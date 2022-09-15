@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { In, Like } from 'typeorm';
+import { TrackDto } from '../track/dto/track.dto';
 import { Track } from '../track/entities/track.entity';
 import { TrackService } from '../track/track.service';
 import { UserService } from '../user/user.services';
@@ -71,7 +72,7 @@ export class TaggedTrackService {
        
     }
 
-    async getTaggedTracks(userId : string, page : number = 0, limit : number = 50, tags : Array<String>, query : string) : Promise<PaginatedResultDto>{
+    async getTaggedTracks(userId : string, page : number = 0, limit : number = 50, tags : Array<String>, query : string = "") : Promise<PaginatedResultDto<TaggedTrack>>{
         if(!limit || limit > 50) {limit = 50};
         if(!page) { page = 0;}
         let taggedTracksBuilder = await TaggedTrack.createQueryBuilder("taggedtrack")
@@ -91,7 +92,7 @@ export class TaggedTrackService {
         .offset(page*limit || 0)
         
         const res = await taggedTracksBuilder.getManyAndCount();
-        const resultDto : PaginatedResultDto= {
+        const resultDto : PaginatedResultDto<TaggedTrack>= {
             data : res[0],
             meta : {
                 total : res[1],

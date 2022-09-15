@@ -2,7 +2,9 @@ import { HttpService } from '@nestjs/axios';
 import { BadRequestException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { plainToClass, plainToInstance } from 'class-transformer';
 import { SpotifyAuthService } from '../authentication/spotify-auth/spotify-auth.service';
-import { SpotifyPaginationTracksDto } from './dto/spotify-response-saved-tracks.dto';
+import { CreateSpotifyPlaylistDto } from './dto/create-spotify-playlist.dto';
+import { SpotifyPaginationPlaylistsDto } from './dto/spotify-pagination-playlists.dto';
+import { SpotifyPaginationTracksDto } from './dto/spotify-pagination-tracks.dto';
 
 @Injectable()
 export class SpotifyService {
@@ -37,20 +39,65 @@ export class SpotifyService {
 
   }
 
-  async createPlaylsit(spotifyId: string){
-
+  async createPlaylist(spotifyId: string, body : CreateSpotifyPlaylistDto){
+    const token = await this.spotifyAuthService.getAccessToken(spotifyId);
+    const res =await this.httpService.axiosRef.post(this.SPOTIFY_URL + "users/"+spotifyId+"/playlists",body, { headers: this.getHeaders(token) })
+    .catch((e)=>{
+      if(e.response.status == HttpStatus.UNAUTHORIZED){
+        console.log(e);
+      }
+    }
+    );
+    if(res&&res.status==HttpStatus.CREATED){
+      return plainToInstance(SpotifyPaginationPlaylistsDto, res.data, { excludeExtraneousValues: true })
+    }
   }
 
-  async updatePlaylist(){
+  async addItemsPlaylist(spotifyUserId : string,tracksURI : string[], playlistId : string){
+    const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
+    const res =await this.httpService.axiosRef.post(this.SPOTIFY_URL + "playlists/"+playlistId+"/tracks",{"uris" : tracksURI, "position" : 0}, { headers: this.getHeaders(token) })
+    .catch((e)=>{
+      if(e.response.status == HttpStatus.UNAUTHORIZED){
+        console.log(e)
+      }
+    }
+    );
+    if(res&&res.status==HttpStatus.CREATED){
+      console.log(res.data)
 
+    }
   }
 
-  async deletePlaylist(){
+  async updateItemsPlaylist(spotifyUserId : string,tracksURI : string[], playlistId : string){
+    const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
+    const res =await this.httpService.axiosRef.put(this.SPOTIFY_URL + "playlists/"+playlistId+"/tracks",{"uris" : tracksURI, "position" : 0}, { headers: this.getHeaders(token) })
+    .catch((e)=>{
+      if(e.response.status == HttpStatus.UNAUTHORIZED){
+        console.log(e)
+      }
+    }
+    );
+    if(res&&res.status==HttpStatus.CREATED){
+      console.log(res.data)
 
+    }
   }
 
-  async getPlaylist(){
 
+  async getPlaylistTracks(spotifyUserId: string,playlistId : string, limit : number = 50, offset : number=0){
+    const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
+    const res =await this.httpService.axiosRef.get(this.SPOTIFY_URL + "playlists/"+playlistId+"/tracks?limit="+limit+"&offset="+offset, { headers: this.getHeaders(token) })
+    .catch((e)=>{
+      if(e.response.status == HttpStatus.UNAUTHORIZED){
+        console.log(e)
+      }
+    }
+    );
+    if(res&&res.status==HttpStatus.OK){
+      console.log(res.data)
+
+      return plainToInstance(SpotifyPaginationTracksDto, res.data, { excludeExtraneousValues: true })
+    }
   }
 
 
