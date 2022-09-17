@@ -22,9 +22,8 @@ export class TrackController {
       if(userId != req.user.id){
           throw new UnauthorizedException();
       }
-      if(!req.user?.spotifyUser?.spotifyId) throw new BadRequestException('No spotify account registered')
 
-      return await this.trackService.getLikedTrack(req.user.id,req.user.spotifyUser.spotifyId, offset);
+      return await this.trackService.getLikedTrack(req.user.id, offset);
       
     }
 

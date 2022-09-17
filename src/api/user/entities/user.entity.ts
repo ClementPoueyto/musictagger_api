@@ -23,6 +23,12 @@ export class User extends BaseEntity{
   @UpdateDateColumn({ type: 'timestamp' })
   public updatedAt: Date;
 
+  @Column({ default: false })
+  public isRegisteredWithGoogle: boolean;
+
+  @Column()
+  public googleId: string;
+
   @JoinColumn()
   @OneToOne(
     () => SpotifyUser, spotifyUser => spotifyUser.user,

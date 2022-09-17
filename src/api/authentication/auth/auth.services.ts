@@ -17,20 +17,24 @@ export class AuthService {
 
 
 
-  async login(authLoginDto: AuthLoginDto) {
+  async login(authLoginDto: AuthLoginDto ) {
     const user = await this.validateUser(authLoginDto);
 
-    return this.refresh_jwt_token(user);
+    return this.refresh_jwt_token(user.id);
   }
 
-  async refresh_jwt_token(user : User) : Promise<JwtDto> {
+  async loginGoogle(user) {
+    return this.refresh_jwt_token(user.id);
+
+  }
+
+  async refresh_jwt_token(userId : string) : Promise<JwtDto> {
 
     const payload = {
-      userId: user.id,
-      spotifyId: user.spotifyUser?.spotifyId
+      userId: userId,
     };
     console.log(payload)
-    User.update(user.id, { lastLoginAt: new Date() });
+    User.update(userId, { lastLoginAt: new Date() });
 
     return new JwtDto(this.jwtService.sign(payload));
   }
@@ -45,6 +49,8 @@ export class AuthService {
 
     return user;
   }
+
+
 
  
 }

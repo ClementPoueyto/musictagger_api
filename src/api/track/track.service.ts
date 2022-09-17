@@ -3,14 +3,19 @@ import { plainToInstance } from 'class-transformer';
 import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
 import { SpotifyService } from '../spotify/spotify.service';
 import { TaggedTrack } from '../tagged-track/entities/tagged-track.entity';
+import { UserService } from '../user/user.services';
 import { TrackDto } from './dto/track.dto';
 import { Track } from './entities/track.entity';
+import { BadRequestException} from '@nestjs/common';
 
 @Injectable()
 export class TrackService {
 
     @Inject()
     private readonly spotifyService: SpotifyService;
+
+    @Inject()
+    private readonly userService : UserService;
 
     constructor() { }
 
@@ -20,7 +25,10 @@ export class TrackService {
         return track;
     }
 
-    async getLikedTrack(userId : string,spotifyId: string, offset: number) {
+    async getLikedTrack(userId : string, offset: number) {
+        const user = await this.userService.findById(userId);
+        if(!user||!user.spotifyUser?.spotifyId) throw new BadRequestException('No spotify account registered')
+        const spotifyId = user.spotifyUser.spotifyId;
         const spotifyLikedTracks = await this.spotifyService.getLikedTracks(spotifyId, 50, offset);
         const spotifyLikedTracksEntities = spotifyLikedTracks.items.map(item => this.dtoToEntitySpotifyTrackMapping(item.track));
         const res = [];

@@ -7,6 +7,7 @@ import { User } from 'src/api/user/entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthHelper } from './auth.helper';
 import { AuthService } from './auth.services';
+import { GoogleOauthStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
@@ -21,7 +22,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     }),TypeOrmModule.forFeature([User])
   ],
   controllers:[AuthController],
-  providers: [AuthService, JwtStrategy, AuthHelper],
+  providers: [AuthService, JwtStrategy,GoogleOauthStrategy, AuthHelper],
   exports:[AuthService, AuthHelper]
 })
 export class AuthModule {}

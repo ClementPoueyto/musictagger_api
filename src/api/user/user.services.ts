@@ -73,7 +73,7 @@ export class UserService {
     user.spotifyUser = spotifyUserEntity;
     User.save(user);
 
-    return this.authService.refresh_jwt_token(user);
+    return this.authService.refresh_jwt_token(user.id);
 
   }
 
@@ -82,7 +82,7 @@ export class UserService {
     user.spotifyUser = null;
     User.save(user);
 
-    return this.authService.refresh_jwt_token(user);
+    return this.authService.refresh_jwt_token(user.id);
 
 
   }

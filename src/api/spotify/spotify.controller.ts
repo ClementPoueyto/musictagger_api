@@ -15,11 +15,9 @@ export class SpotifyController {
   @UseGuards(JwtAuthGuard)
   @ApiOkResponse({description: 'get Spotify Liked Tracks', type: SpotifyPaginationTracksDto})
   @Get('like')
-  async getlikedTracks(    @Req() req: any, @Query('spotifyId') spotifyId : string, @Query('limit') limit = 50, @Query('offset') offset = 0
+  async getlikedTracks(@Query('spotifyId') spotifyId : string, @Query('limit') limit = 50, @Query('offset') offset = 0
   ) : Promise<SpotifyPaginationTracksDto>{
-    if(!req.user?.spotifyUser?.spotifyId) throw new BadRequestException('No spotify account registered')
     if(!spotifyId) throw new BadRequestException();
-    if(spotifyId!=req.user.spotifyUser.spotifyId) throw new UnauthorizedException();
     const res= await this.spotifyService.getLikedTracks(spotifyId, limit, offset);
     return res;
   }
