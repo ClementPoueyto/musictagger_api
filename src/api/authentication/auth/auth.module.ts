@@ -7,9 +7,11 @@ import { User } from 'src/api/user/entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthHelper } from './auth.helper';
 import { AuthService } from './auth.services';
-import { GoogleOauthStrategy } from './strategies/google.strategy';
+import { GoogleAuthController } from './google-auth.controller';
+import { GoogleAuthenticationService } from './google-auth.service';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-
+import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt', property: 'user' }),
@@ -19,10 +21,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         secret: config.get('JWT_SECRET'),
         signOptions: { expiresIn: config.get('JWT_EXPIRES') },
       }),
-    }),TypeOrmModule.forFeature([User])
+    }),TypeOrmModule.forFeature([User],
+      )
   ],
-  controllers:[AuthController],
-  providers: [AuthService, JwtStrategy,GoogleOauthStrategy, AuthHelper],
-  exports:[AuthService, AuthHelper]
+  controllers:[AuthController, GoogleAuthController],
+  providers: [AuthService, GoogleAuthenticationService,JwtStrategy, RefreshJwtStrategy,GoogleStrategy,AuthHelper],
+  exports:[AuthService,GoogleAuthenticationService, AuthHelper]
 })
 export class AuthModule {}

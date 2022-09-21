@@ -17,19 +17,20 @@ export class AuthService {
 
 
 
-  async login(authLoginDto: AuthLoginDto ) {
+  async login(authLoginDto: AuthLoginDto ) :Promise<JwtDto>{
     const user = await this.validateUser(authLoginDto);
 
-    return this.refresh_jwt_token(user.id);
+    return this.refreshJwtToken(user.id);
   }
 
   async loginGoogle(user) {
-    return this.refresh_jwt_token(user.id);
+    return this.refreshJwtToken(user.id);
 
   }
 
-  async refresh_jwt_token(userId : string) : Promise<JwtDto> {
 
+
+  async refreshJwtToken(userId : string) : Promise<JwtDto> {
     const payload = {
       userId: userId,
     };

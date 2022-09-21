@@ -17,8 +17,11 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto) {
     const user = new User();
+    user.isRegisteredWithGoogle = false;
     user.email = createUserDto.email;
     user.password = createUserDto.password;
+    user.firstname = createUserDto.firstname;
+    user.lastname = createUserDto.lastname;
     const userCreated = User.save(user).catch(_ => { throw new ConflictException('Login already exists') });
     return userCreated;
 
@@ -73,7 +76,7 @@ export class UserService {
     user.spotifyUser = spotifyUserEntity;
     User.save(user);
 
-    return this.authService.refresh_jwt_token(user.id);
+    return this.authService.refreshJwtToken(user.id);
 
   }
 
@@ -82,7 +85,7 @@ export class UserService {
     user.spotifyUser = null;
     User.save(user);
 
-    return this.authService.refresh_jwt_token(user.id);
+    return this.authService.refreshJwtToken(user.id);
 
 
   }

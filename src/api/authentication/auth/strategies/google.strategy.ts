@@ -1,42 +1,35 @@
 import { PassportStrategy } from '@nestjs/passport';
-import { Profile, Strategy } from 'passport-google-oauth20';
-import { Injectable } from '@nestjs/common';
+import { Strategy, VerifyCallback } from 'passport-google-oauth20';
+import { config } from 'dotenv';
+
+import { Injectable, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { User } from 'src/api/user/entities/user.entity';
+
+config();
 
 @Injectable()
-export class GoogleOauthStrategy extends PassportStrategy(Strategy, 'google') {
-  constructor(
-    configService: ConfigService,
-  ) {
+export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+
+  constructor(    @Inject(ConfigService) config: ConfigService,
+    ) {
     super({
-      // Put config in `.env`
-      clientID: configService.get<string>('OAUTH_GOOGLE_ID'),
-      clientSecret: configService.get<string>('OAUTH_GOOGLE_SECRET'),
-      callbackURL: configService.get<string>('OAUTH_GOOGLE_REDIRECT_URL'),
+      clientID:config.get('GOOGLE_CLIENT_ID'),
+      clientSecret: config.get('GOOGLE_SECRET'),
+      callbackURL: config.get('GOOGLE_REDIRECT'),
       scope: ['email', 'profile'],
     });
   }
 
-  async validate(
-    _accessToken: string,
-    _refreshToken: string,
-    profile: Profile,
-  ) {
-    const { id, name, emails } = profile;
-
-    let user = await User.findOne({
-        where: { isRegisteredWithGoogle: true, googleId: id },
-      });
-      if (!user) {
-        user = new User();
-        user.isRegisteredWithGoogle = true;
-        user.googleId = id;
-        user.email = emails[0].value
-        User.save(user);
-      }
-  
-      return user;
-    };
-  
+  async validate (accessToken: string, refreshToken: string, profile: any, done: VerifyCallback): Promise<any> {
+    const { name, emails, photos } = profile
+    const user = {
+      email: emails[0].value,
+      firstName: name.givenName,
+      lastName: name.familyName,
+      picture: photos[0].value,
+      accessToken
+    }
+    console.log(user)
+    done(null, user);
+  }
 }

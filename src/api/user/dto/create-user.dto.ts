@@ -3,7 +3,18 @@ import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateUserDto {
 
-  
+  @ApiProperty({
+    description : 'firstname user',
+    type : String
+  })
+  public firstname: string;
+
+  @ApiProperty({
+    description : 'firstname user',
+    type : String
+  })
+  public lastname: string;
+
   @ApiProperty({
     description : 'email of the account',
     type  :String

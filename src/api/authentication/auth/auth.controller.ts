@@ -1,35 +1,28 @@
-import { Controller, Post, UseGuards, Body, Get, Inject, Req, Res } from '@nestjs/common';
+import { Controller, Post, UseGuards, Body, Get, Inject, Request, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { AuthLoginDto } from './dto/auth.dto';
 import { AuthService } from './auth.services';
-import { GoogleOauthGuard } from './guards/google-auth-guard';
-import { Request, Response } from 'express';
+import { JwtDto } from './dto/jwt.dto';
+import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guards';
 
 @ApiTags('auth')
 @Controller('auth')
-@ApiBearerAuth()
 export class AuthController {
   @Inject(AuthService)
   private readonly authService: AuthService;
 
   @Post()
-  @ApiOkResponse({description: 'Return JWT token', type : String})
+  @ApiOkResponse({description: 'Return JWT token', type : JwtDto})
   async login(@Body() authLoginDto: AuthLoginDto) {
     return this.authService.login(authLoginDto);
   }
 
-  @Get()
-  @UseGuards(GoogleOauthGuard)
-  async googleAuth(@Req() _req) {
-    // Guard redirects
-  }
-
-  @Get('redirect')
-  @UseGuards(GoogleOauthGuard)
-  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    const token = this.authService.loginGoogle(req.user);
-    res.cookie('jwt', token);
-    return req.user;
+  @Get('refresh-token')
+  @UseGuards(RefreshJwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOkResponse({description: 'refresh JWT token', type : JwtDto})
+  async refresh_jwt_token(@Request() req: any) {
+    return this.authService.refreshJwtToken(req.user.id);
   }
 
 }

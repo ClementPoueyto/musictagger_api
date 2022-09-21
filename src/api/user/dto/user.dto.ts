@@ -4,7 +4,17 @@ import { IsEmail, IsNumber } from 'class-validator';
 
 export class UserDto{
 
+  @ApiProperty({
+    description : 'firstname account',
+    type : String
+  })
+  public firstname: string;
 
+  @ApiProperty({
+    description : 'firstname account',
+    type : String
+  })
+  public lastname: string;
 
   @ApiProperty({
     description: 'account id',

@@ -16,10 +16,14 @@ export class UserController {
   private readonly service: UserService;
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOkResponse({description: 'Return the corresponding user', type : UserDto})
   @ApiUnauthorizedResponse({description: 'Invalid Authorization header'})
   @ApiNotFoundResponse({description: 'User not found'})
-  public async getUser(@Param('id', ParseIntPipe) id: string): Promise<UserDto> {
+  public async getUser(@Request() req: any,@Param('id', ParseIntPipe) id: string): Promise<UserDto> {
+    if(id != req.user.id){
+      throw new UnauthorizedException();
+    }
     const  user = await this.service.showById(id);
     return plainToInstance(UserDto, user);
   }

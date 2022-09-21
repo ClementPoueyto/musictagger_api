@@ -10,8 +10,14 @@ export class User extends BaseEntity{
   @Column({ type: 'varchar', length: 120, unique: true })
   public email: string;
 
-  @Column({ type: 'varchar', length: 120 })
-  public password: string;
+  @Column({ type: 'varchar', length: 120, nullable : true })
+  public password?: string;
+
+  @Column({ type: 'varchar', length: 120, nullable : true })
+  public firstname?: string;
+
+  @Column({ type: 'varchar', length: 120, nullable : true })
+  public lastname?: string;
 
   /*
    * Create and Update Date Columns
@@ -26,9 +32,6 @@ export class User extends BaseEntity{
   @Column({ default: false })
   public isRegisteredWithGoogle: boolean;
 
-  @Column()
-  public googleId: string;
-
   @JoinColumn()
   @OneToOne(
     () => SpotifyUser, spotifyUser => spotifyUser.user,
@@ -41,6 +44,7 @@ export class User extends BaseEntity{
 
   @BeforeInsert()
   async hashPassword() {
+    if(!this.password) return
     this.password = await bcrypt.hash(this.password, 8);
   }
 
