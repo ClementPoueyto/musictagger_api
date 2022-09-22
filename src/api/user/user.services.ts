@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AuthService } from '../authentication/auth/auth.services';
 import { SpotifyUserDto } from '../authentication/spotify-auth/dto/spotify-user.dto';
 import { SpotifyUser } from '../authentication/spotify-auth/entities/spotify-user.entity';
@@ -50,7 +50,7 @@ export class UserService {
   }
 
   async loginSpotifyAccount(userId: string, spotifyUser: SpotifyUserDto) {
-    
+    try{
     const user = await this.findById(userId);
     const currentSpotifyUser = await user.spotifyUser;
    
@@ -58,25 +58,28 @@ export class UserService {
     if (currentSpotifyUser && currentSpotifyUser.spotifyId != spotifyUser.spotifyId) {
       await this.logoutSpotifyAccount(userId);
     }
-
     //verifie si le compte est deja attribué
     const existingSpotifyAccount = await this.spotifyAuthService.findById(spotifyUser.spotifyId);
     if (existingSpotifyAccount && existingSpotifyAccount.user?.id && existingSpotifyAccount.user?.id != userId) {
       //déconnecte l'ancien utilisateur
-      this.logoutSpotifyAccount((await existingSpotifyAccount.user).id);
+      await this.logoutSpotifyAccount((await existingSpotifyAccount.user).id);
     }
 
     //met à jour si Id identique; crée sinon
-    const spotifyUserEntity = new SpotifyUser();
-    spotifyUserEntity.spotifyId = spotifyUser.spotifyId
-    spotifyUserEntity.spotifyAccessToken = spotifyUser.spotifyAccessToken
-    spotifyUserEntity.spotifyRefreshToken = spotifyUser.spotifyRefreshToken
-    spotifyUserEntity.tokenCreation = spotifyUser.tokenCreation
-    spotifyUserEntity.expiresIn = spotifyUser.expiresIn;
-    user.spotifyUser = spotifyUserEntity;
-    User.save(user);
-
+      const spotifyUserEntity = new SpotifyUser();
+      spotifyUserEntity.spotifyId = spotifyUser.spotifyId
+      spotifyUserEntity.spotifyAccessToken = spotifyUser.spotifyAccessToken
+      spotifyUserEntity.spotifyRefreshToken = spotifyUser.spotifyRefreshToken
+      spotifyUserEntity.tokenCreation = new Date();
+      spotifyUserEntity.expiresIn = spotifyUser.expiresIn;
+      user.spotifyUser = spotifyUserEntity;
+      User.save(user);
+  
     return this.authService.refreshJwtToken(user.id);
+  }
+  catch(err){
+    throw new BadRequestException(err);
+  }
 
   }
 

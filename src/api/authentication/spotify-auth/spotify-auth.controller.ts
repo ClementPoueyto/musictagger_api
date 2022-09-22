@@ -1,4 +1,5 @@
 import { BadRequestException, Controller, Get, Inject, Param, Query, Req, Request, Res, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Profile } from 'passport-spotify';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guards';
@@ -13,8 +14,8 @@ export class SpotifyAuthController {
 
   @Inject()
   private spotifyAuthService : SpotifyAuthService;
-
-  constructor() {}
+  @Inject(ConfigService) config: ConfigService;
+  constructor( ) {}
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -36,8 +37,9 @@ export class SpotifyAuthController {
   @Get('redirect')
   @ApiOkResponse({description: 'Login on Spotify page and redirect', type : SpotifyUserDto})
   async spotifyAuthRedirect(
-    @Req() req: any,
+    @Req() req: any,@Res() res: any,
   ): Promise<SpotifyUserDto> {
+    try{
     const {
       user,
       authInfo,
@@ -52,12 +54,20 @@ export class SpotifyAuthController {
     
     const authInfoDto : SpotifyUserDto = {
       spotifyId: user.id,
+      
       spotifyAccessToken: authInfo.accessToken,
       spotifyRefreshToken: authInfo.refreshToken,
       expiresIn: authInfo.expires_in,
       tokenCreation: new Date()
+      
     }
-
+    res.redirect(this.config.get('REDIRECT_URL_FRONTEND')+'spotify/success?spotifyId='+authInfoDto.spotifyId+
+    '&spotifyAccessToken='+authInfoDto.spotifyAccessToken+'&spotifyRefreshToken='+authInfoDto.spotifyRefreshToken+
+    '&expiresIn='+authInfoDto.expiresIn+"&tokenCreation="+authInfoDto.tokenCreation)
     return authInfoDto;
+  }catch(err){
+    res.redirect(this.config.get('REDIRECT_URL_FRONTEND')+'spotify/failure')
+  }
+    
   }
 }

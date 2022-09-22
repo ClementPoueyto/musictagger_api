@@ -17,11 +17,11 @@ export class GoogleAuthController {
   async googleAuthRedirect(@Req() req, @Res() res) {
     try{
       const jwt = await this.googleAuthService.googleLogin(req);
-      res.redirect(this.config.get('REDIRECT_URL_LOGIN_FRONTEND')+'?jwt=' + jwt);
+      res.redirect(this.config.get('REDIRECT_URL_FRONTEND')+'login?jwt=' + jwt);
     }
     catch(err){
       console.log(err)
-      res.redirect(this.config.get('REDIRECT_URL_LOGIN_FRONTEND')+'?failure=true&message='+err.message);
+      res.redirect(this.config.get('REDIRECT_URL_FRONTEND')+'login?failure=true&message='+err.message);
     } 
   }
 }

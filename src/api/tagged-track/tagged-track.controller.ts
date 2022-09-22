@@ -53,7 +53,7 @@ export class TaggedTrackController {
     @ApiOkResponse({description: 'search tags' })
     @Get('pagination')
     async searchTaggedTracks(@Req() req: any,@Query('userId') userId : string, @Query('limit') limit : number = 50,
-     @Query('page') page : number = 0, @Query('tags',new ParseArrayPipe({ items: String, separator: ',' })) tags: string[], @Query('query') query : string
+     @Query('page') page : number = 0, @Query('tags',new ParseArrayPipe({ items: String, separator: ',', optional : true })) tags?: string[], @Query('query') query? : string
     ) : Promise<PaginatedResultDto<TaggedTrack>> {
       if(!userId) throw new BadRequestException('userId missing');
       if(userId!=req.user.id) throw new UnauthorizedException();

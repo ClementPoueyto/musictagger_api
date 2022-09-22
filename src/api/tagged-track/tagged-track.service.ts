@@ -72,7 +72,7 @@ export class TaggedTrackService {
        
     }
 
-    async getTaggedTracks(userId : string, page : number = 0, limit : number = 50, tags : Array<String>, query : string = "") : Promise<PaginatedResultDto<TaggedTrack>>{
+    async getTaggedTracks(userId : string, page : number = 0, limit : number = 50, tags : Array<String> = [], query : string = "") : Promise<PaginatedResultDto<TaggedTrack>>{
         if(!limit || limit > 50) {limit = 50};
         if(!page) { page = 0;}
         let taggedTracksBuilder = await TaggedTrack.createQueryBuilder("taggedtrack")

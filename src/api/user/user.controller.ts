@@ -43,17 +43,18 @@ export class UserController {
   @ApiBearerAuth()
   @ApiOkResponse({description: 'login Spotify Account to user'})
   public async loginSpotifyUser(@Request() req: any,@Param('id', ParseIntPipe) id: string) : Promise<JwtDto>{
-    const spotifyUserDto: SpotifyUserDto = plainToInstance(SpotifyUserDto,req.body);
+    const spotifyUserDto: SpotifyUserDto = req.body;
     if(id != req.user.id){
       throw new UnauthorizedException();
     }
     if(spotifyUserDto.spotifyId == null || spotifyUserDto.spotifyRefreshToken == null || spotifyUserDto.spotifyAccessToken == null){
-      console.log(spotifyUserDto)
       throw new BadRequestException();
     }
-    return this.service.loginSpotifyAccount(id, spotifyUserDto);
+   return this.service.loginSpotifyAccount(id, spotifyUserDto);
+   
   }
 
+  
   @Delete(':id/spotify')
   @UseGuards(JwtAuthGuard)
   @ApiUnauthorizedResponse()
