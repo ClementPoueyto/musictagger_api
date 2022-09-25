@@ -1,4 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { In, Like } from 'typeorm';
 import { TrackDto } from '../track/dto/track.dto';
 import { Track } from '../track/entities/track.entity';
@@ -6,6 +7,7 @@ import { TrackService } from '../track/track.service';
 import { UserService } from '../user/user.services';
 import { CreateTaggedTrackDto } from './dto/create-tagged-track.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
+import { TaggedTrackDto } from './dto/tagged-track.dto';
 import { TaggedTrack } from './entities/tagged-track.entity';
 
 @Injectable()
@@ -72,7 +74,21 @@ export class TaggedTrackService {
        
     }
 
-    async getTaggedTracks(userId : string, page : number = 0, limit : number = 50, tags : Array<String> = [], query : string = "") : Promise<PaginatedResultDto<TaggedTrack>>{
+    async getLikedTaggedTracks(userId : string, page : number = 0, size : number = 50) : Promise<PaginatedResultDto<TaggedTrackDto>>{
+        const tracksLikePagination : PaginatedResultDto<TrackDto> = await this.trackService.getLikedTrack(userId, page, size);
+        const resultDto : PaginatedResultDto<TaggedTrackDto>= {
+            data : tracksLikePagination.data.map(trackDto =>{
+
+                 const taggedTrackDto = {id : trackDto?.taggedTracks?.length>0?trackDto?.taggedTracks[0]?.id:undefined, tags : trackDto?.taggedTracks?.length>0?trackDto?.taggedTracks[0]?.tags:[], track : trackDto}
+                delete taggedTrackDto.track.taggedTracks
+                return taggedTrackDto;
+                }),
+                metadata : tracksLikePagination.metadata
+        }
+        return resultDto;
+    }
+
+    async getTaggedTracks(userId : string, page : number = 0, limit : number = 50, tags : Array<String> = [], query : string = "") : Promise<PaginatedResultDto<TaggedTrackDto>>{
         if(!limit || limit > 50) {limit = 50};
         if(!page) { page = 0;}
         let taggedTracksBuilder = await TaggedTrack.createQueryBuilder("taggedtrack")
@@ -92,11 +108,12 @@ export class TaggedTrackService {
         .offset(page*limit || 0)
         
         const res = await taggedTracksBuilder.getManyAndCount();
-        const resultDto : PaginatedResultDto<TaggedTrack>= {
-            data : res[0],
-            meta : {
+        const resultDto : PaginatedResultDto<TaggedTrackDto>= {
+            data : plainToInstance(TaggedTrackDto, res[0], { excludeExtraneousValues: true }),
+            metadata : {
                 total : res[1],
-                page : page
+                page : page,
+                limit : limit
             }
         }
           

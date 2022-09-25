@@ -2,6 +2,7 @@ import { BadRequestException, Controller, Get, Inject, Param, ParseIntPipe, Quer
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
+import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
 import { TrackDto } from './dto/track.dto';
 import { TrackService } from './track.service';
 
@@ -14,16 +15,16 @@ export class TrackController {
 
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @ApiOkResponse({description: 'get liked Track by user id', type : Array<TrackDto>})
+    @ApiOkResponse({description: 'get liked Track by user id', type : Promise<PaginatedResultDto<TrackDto>>})
     @Get('like')
-    async getLikeTrack(@Req() req: any, @Query('userId') userId : string,  @Query('offset') offset : number,
-    ) : Promise<TrackDto[]>{
+    async getLikeTrack(@Req() req: any, @Query('userId') userId : string,  @Query('page') page : number, @Query('size') size : number,
+    ) : Promise<PaginatedResultDto<TrackDto>>{
       if(!userId) throw new BadRequestException('user id missing');
       if(userId != req.user.id){
           throw new UnauthorizedException();
       }
 
-      return await this.trackService.getLikedTrack(req.user.id, offset);
+      return await this.trackService.getLikedTrack(req.user.id, page, size);
       
     }
 

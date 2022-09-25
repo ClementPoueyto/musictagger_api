@@ -52,12 +52,27 @@ export class TaggedTrackController {
     @UseGuards(JwtAuthGuard)
     @ApiOkResponse({description: 'search tags' })
     @Get('pagination')
-    async searchTaggedTracks(@Req() req: any,@Query('userId') userId : string, @Query('limit') limit : number = 50,
+    async searchTaggedTracks(@Req() req: any,@Query('userId') userId : string, @Query('size') size : number = 50,
      @Query('page') page : number = 0, @Query('tags',new ParseArrayPipe({ items: String, separator: ',', optional : true })) tags?: string[], @Query('query') query? : string
-    ) : Promise<PaginatedResultDto<TaggedTrack>> {
+    ) : Promise<PaginatedResultDto<TaggedTrackDto>> {
+      console.log(query)
       if(!userId) throw new BadRequestException('userId missing');
       if(userId!=req.user.id) throw new UnauthorizedException();
-      return await this.taggedTrackService.getTaggedTracks(userId, page, limit, tags, query);
+      return await this.taggedTrackService.getTaggedTracks(userId, page, size, tags, query);
+      
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOkResponse({description: 'get liked Track by user id', type : Promise<PaginatedResultDto<TaggedTrack>>})
+    @Get('like')
+    async getLikeTrack(@Req() req: any, @Query('userId') userId : string,  @Query('page') page : number=0,  @Query('size') size : number = 50,
+    ) : Promise<PaginatedResultDto<TaggedTrackDto>>{
+      if(!userId) throw new BadRequestException('user id missing');
+      if(userId != req.user.id){
+          throw new UnauthorizedException();
+      }
+      return await this.taggedTrackService.getLikedTaggedTracks(req.user.id, page, size);
       
     }
 

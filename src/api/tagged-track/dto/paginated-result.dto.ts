@@ -1,7 +1,8 @@
 export class PaginatedResultDto<T> {
     data: T[];
-    meta: {
+    metadata: {
       total: number;
       page: number;
+      limit : number;
     };
   }

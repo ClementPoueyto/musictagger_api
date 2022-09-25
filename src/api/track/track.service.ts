@@ -7,6 +7,7 @@ import { UserService } from '../user/user.services';
 import { TrackDto } from './dto/track.dto';
 import { Track } from './entities/track.entity';
 import { BadRequestException} from '@nestjs/common';
+import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
 
 @Injectable()
 export class TrackService {
@@ -25,28 +26,43 @@ export class TrackService {
         return track;
     }
 
-    async getLikedTrack(userId : string, offset: number) {
+    async getLikedTrack(userId : string, page: number=0, size : number = 50) : Promise<PaginatedResultDto<TrackDto>> {
         const user = await this.userService.findById(userId);
         if(!user||!user.spotifyUser?.spotifyId) throw new BadRequestException('No spotify account registered')
         const spotifyId = user.spotifyUser.spotifyId;
-        const spotifyLikedTracks = await this.spotifyService.getLikedTracks(spotifyId, 50, offset);
+        const spotifyLikedTracks = await this.spotifyService.getLikedTracks(spotifyId, size, page);
         const spotifyLikedTracksEntities = spotifyLikedTracks.items.map(item => this.dtoToEntitySpotifyTrackMapping(item.track));
+  
+        for(let trackEntity of spotifyLikedTracksEntities){
+            try{
+                await Track.save(trackEntity);
+            }
+            catch(err){}
+        }
+
         const res = [];
+        
         for(let e of spotifyLikedTracksEntities){
-           await Track.createQueryBuilder('track').leftJoinAndMapOne("track.taggedtracks", TaggedTrack, "taggedtrack","taggedtrack.trackId = track.id  and taggedtrack.userId = :userId", {userId : userId})
+           await Track.createQueryBuilder('track').leftJoinAndMapOne("track.taggedTrack", TaggedTrack, "taggedTrack","taggedTrack.trackId = track.id  and taggedTrack.userId = :userId", {userId : userId})
            .where(
             'track.title = :title and track.albumTitle = :albumTitle and track.artistName = :artistName', { title : e.title, albumTitle : e.albumTitle, artistName : e.artistName}, 
            ).getOne()
-           .catch()
+           .catch(err=>{console.log(err)})
             .then(track => {
-                if(track){
-                e.id = track.id
-                Track.save(e).catch(e => { console.log(e.message) });
-                res.push(track)
+                if(track && track["taggedTrack"]){
+                    track.taggedTracks = [];
+                    track.taggedTracks.push(track["taggedTrack"]);
                 }
+                res.push(track);
             });
+
         }
-        return res.map(track => plainToInstance(TrackDto, track));
+        return {data : res.map(track => plainToInstance(TrackDto, track,{excludeExtraneousValues : true} )),
+        metadata : {
+                page : page,
+                total : spotifyLikedTracks.total,
+                limit : size
+            }};
     }
 
     private dtoToEntitySpotifyTrackMapping(trackDto: SpotifyTrackDto): Track {

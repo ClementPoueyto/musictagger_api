@@ -22,17 +22,20 @@ export class SpotifyService {
     }
   }
 
-  async getLikedTracks(spotifyId: string, limit=50, offset=0) {
+  async getLikedTracks(spotifyId: string, limit=50, page=0) {
+    if(!page) page = 0
+    if(!limit || limit>50) limit = 50
 
     const token = await this.spotifyAuthService.getAccessToken(spotifyId);
-         const res =await this.httpService.axiosRef.get(this.SPOTIFY_URL + "me/tracks?limit=" + limit + "&offset=" + offset*limit, { headers: this.getHeaders(token) })
+
+         const res =await this.httpService.axiosRef.get(this.SPOTIFY_URL + "me/tracks?limit=" + limit + "&offset=" + page*limit, { headers: this.getHeaders(token) })
         .catch((e)=>{
+          console.log(e.message)
           if(e.response.status == HttpStatus.UNAUTHORIZED){
             console.log(e)
           }
         }
         );
-
         if(res&&res.status==HttpStatus.OK){
           return plainToInstance(SpotifyPaginationTracksDto, res.data, { excludeExtraneousValues: true })
         }

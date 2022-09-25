@@ -40,6 +40,6 @@ export class TrackDto {
 
     @Expose()
     @Type(()=> TaggedTrackDto)
-    taggedTrack : TaggedTrackDto;
+    taggedTracks : TaggedTrackDto[];
 
 }

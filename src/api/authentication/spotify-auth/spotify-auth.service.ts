@@ -69,9 +69,13 @@ export class SpotifyAuthService {
     if (!spotifyUser.spotifyAccessToken) throw new BadRequestException("no spotify access token")
     const tokenDate = spotifyUser.tokenCreation;
     tokenDate.setSeconds(spotifyUser.tokenCreation.getSeconds()+spotifyUser.expiresIn);
-    if(tokenDate<=new Date()){
+    console.log(tokenDate)
+    console.log(new Date())
+    console.log(spotifyUser)
+    if(tokenDate.getTime()<=new Date().getTime()){
       console.log("new token");
       const token = await this.refresh_access_token(spotifyUser.spotifyRefreshToken, spotifyUser.spotifyId);
+      console.log(token)
       return token.access_token;
     }
 
