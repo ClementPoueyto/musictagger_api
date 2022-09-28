@@ -19,7 +19,7 @@ export class TaggedTrackService {
     constructor() { }
 
     async addTagToTrack(createTag: CreateTaggedTrackDto, userId: string) {
-        const track = await this.trackService.getTrackById(createTag.trackId);
+        const track = await this.trackService.getTrackById(createTag.trackId, true);
         track.taggedTracks = undefined;
         const existingTaggedTrack = await TaggedTrack.findOne({ where: { track: { id: createTag.trackId }, userId: userId } });
         const taggedTrack = new TaggedTrack();
@@ -37,10 +37,9 @@ export class TaggedTrackService {
 
     }
 
-    async deleteTagToTrack(createTag: CreateTaggedTrackDto, userId: string) {
-        const track = await this.trackService.getTrackById(createTag.trackId);
-        track.taggedTracks = undefined;
-        const existingTaggedTrack = await TaggedTrack.findOne({ where: { track: { id: createTag.trackId }, userId: userId } });
+    async deleteTagToTrack(deleteTag: CreateTaggedTrackDto, userId: string) {
+        const track = await this.trackService.getTrackById(deleteTag.trackId, false);
+        const existingTaggedTrack = await TaggedTrack.findOne({ where: { track: { id: deleteTag.trackId }, userId: userId } });
         const taggedTrack = new TaggedTrack();
         if (existingTaggedTrack) {
             taggedTrack.id = existingTaggedTrack.id;
@@ -49,7 +48,7 @@ export class TaggedTrackService {
         else{
             taggedTrack.tags = [];
         }
-        taggedTrack.tags= taggedTrack.tags.filter(e=> {return e != createTag.tag});
+        taggedTrack.tags= taggedTrack.tags.filter(e=> {return e != deleteTag.tag});
         if(taggedTrack.tags.length==0){
             TaggedTrack.remove(taggedTrack);
             return;
@@ -60,14 +59,20 @@ export class TaggedTrackService {
 
     }
 
-    async getTaggedTrackById(tagId : string){
-       const tag = await TaggedTrack.findOne({relations : {track : true},where : {id : tagId}});
-       if(!tag) throw new NotFoundException();
-       return tag;
+    async getTaggedTrackByTrackId(trackId : string, userId : string) : Promise<TaggedTrackDto>{
+       const tag = await TaggedTrack.findOne({relations : {track : true},where : {track : { id : trackId}, userId : userId}});
+       if(!tag){
+        const track = await this.trackService.getTrackById(trackId, false);
+        return {id : undefined, tags : [], track : plainToInstance(TrackDto, track, {excludeExtraneousValues : true})}
+       }
+       return plainToInstance(TaggedTrackDto, tag);
     }
 
     async getAllTagsName(userId : string){
         const taggedTracks = await TaggedTrack.find({where : { userId : userId} });
+        if(!taggedTracks){
+            return [];
+        }
         const allTags = taggedTracks.sort(((a, b) => a.id < b.id ? -1 : 1))
         .flatMap(e=> e.tags);
         return Array.from(new Set(allTags));
@@ -93,10 +98,13 @@ export class TaggedTrackService {
         if(!page) { page = 0;}
         let taggedTracksBuilder = await TaggedTrack.createQueryBuilder("taggedtrack")
         .innerJoinAndSelect("taggedtrack.track", "track")
-        .where("taggedtrack.userId = :id", {id : userId})
-        for(let tag of tags){
-            taggedTracksBuilder = taggedTracksBuilder   
-            .andWhere("tags && ARRAY[:...filters]", { filters: [tag] })
+        .where("taggedtrack.userId = :id", {id : userId});
+        let filters = {}
+        for(let n = 0; n<tags.length; n++){
+            filters={}
+            filters[n]=tags[n]
+            taggedTracksBuilder
+            .andWhere("tags && ARRAY[:"+n+"]", filters)
         }
         taggedTracksBuilder
         .andWhere("(LOWER(track.title) LIKE LOWER(:query) OR LOWER(track.artistName) LIKE LOWER(:query) OR LOWER(track.albumTitle) LIKE LOWER(:query))",
@@ -106,7 +114,6 @@ export class TaggedTrackService {
         taggedTracksBuilder.orderBy("taggedtrack.id", "DESC")
         .limit(limit || 50)
         .offset(page*limit || 0)
-        
         const res = await taggedTracksBuilder.getManyAndCount();
         const resultDto : PaginatedResultDto<TaggedTrackDto>= {
             data : plainToInstance(TaggedTrackDto, res[0], { excludeExtraneousValues: true }),

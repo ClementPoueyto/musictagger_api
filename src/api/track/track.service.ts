@@ -20,8 +20,8 @@ export class TrackService {
 
     constructor() { }
 
-    async getTrackById(id: string) {
-        const track = await Track.findOne({relations : { taggedTracks : true}, where: { id: id } });
+    async getTrackById(id: string, relation : boolean) {
+        const track = await Track.findOne({relations : { taggedTracks : relation}, where: { id: id } });
         if (!track) throw new NotFoundException('track not found with id : ' + id)
         return track;
     }

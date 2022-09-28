@@ -55,9 +55,11 @@ export class TaggedTrackController {
     async searchTaggedTracks(@Req() req: any,@Query('userId') userId : string, @Query('size') size : number = 50,
      @Query('page') page : number = 0, @Query('tags',new ParseArrayPipe({ items: String, separator: ',', optional : true })) tags?: string[], @Query('query') query? : string
     ) : Promise<PaginatedResultDto<TaggedTrackDto>> {
-      console.log(query)
       if(!userId) throw new BadRequestException('userId missing');
       if(userId!=req.user.id) throw new UnauthorizedException();
+      if(tags){
+        tags = tags.map(tag=> tag.trim());
+      }
       return await this.taggedTrackService.getTaggedTracks(userId, page, size, tags, query);
       
     }
@@ -77,14 +79,13 @@ export class TaggedTrackController {
     }
 
     @UseGuards(JwtAuthGuard)
-    @ApiOkResponse({description: 'get tagged track by id' })
-    @Get(':id')
-    async getTaggedTrackById(@Req() req: any, @Param('id', ParseIntPipe) tagId : string ,@Query('userId') userId : string
+    @ApiOkResponse({description: 'get tagged track by track id' })
+    @Get('tracks/:trackId')
+    async getTaggedTrackByTrackId(@Req() req: any, @Param('trackId', ParseIntPipe) trackId : string ,@Query('userId') userId : string
     ) : Promise<TaggedTrackDto> {
       if(!userId) throw new BadRequestException('userId missing');
       if(userId!=req.user.id) throw new UnauthorizedException();
-      const tag =await this.taggedTrackService.getTaggedTrackById(tagId);
-      if(tag.userId != userId) throw new UnauthorizedException();
+      const tag =await this.taggedTrackService.getTaggedTrackByTrackId(trackId, userId);
       return  plainToInstance(TaggedTrackDto, tag);
     }
 

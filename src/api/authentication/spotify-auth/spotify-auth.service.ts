@@ -52,7 +52,6 @@ export class SpotifyAuthService {
     const result =  (await this.httpService.axiosRef.post(this.SPOTIFY_ACCOUNT_URL+"token",`grant_type=refresh_token&refresh_token=${refresh_token}`,{headers : header})).data;
     if(!result) throw new BadRequestException()
     const spotifyTokenAccess = new SpotifyAccessTokenDto(result);
-    console.log(spotifyTokenAccess)
     const spotifyUser = await this.findById(spotifyId);
     if(!spotifyUser){ throw new NotFoundException()}
     spotifyUser.spotifyAccessToken = spotifyTokenAccess.access_token;
@@ -69,13 +68,9 @@ export class SpotifyAuthService {
     if (!spotifyUser.spotifyAccessToken) throw new BadRequestException("no spotify access token")
     const tokenDate = spotifyUser.tokenCreation;
     tokenDate.setSeconds(spotifyUser.tokenCreation.getSeconds()+spotifyUser.expiresIn);
-    console.log(tokenDate)
-    console.log(new Date())
-    console.log(spotifyUser)
     if(tokenDate.getTime()<=new Date().getTime()){
       console.log("new token");
       const token = await this.refresh_access_token(spotifyUser.spotifyRefreshToken, spotifyUser.spotifyId);
-      console.log(token)
       return token.access_token;
     }
 

@@ -34,7 +34,6 @@ export class AuthService {
     const payload = {
       userId: userId,
     };
-    console.log(payload)
     User.update(userId, { lastLoginAt: new Date() });
 
     return new JwtDto(this.jwtService.sign(payload));

@@ -34,7 +34,7 @@ export class TrackController {
   async getTrackById(@Param('id',ParseIntPipe) trackId : string,
   ) : Promise<TrackDto>{
     if(!trackId) throw new BadRequestException('track id missing');
-    return await plainToInstance(TrackDto,this.trackService.getTrackById(trackId));
+    return await plainToInstance(TrackDto,this.trackService.getTrackById(trackId, true));
     
   }
 

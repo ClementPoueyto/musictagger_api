@@ -50,7 +50,7 @@ export class UserController {
     if(spotifyUserDto.spotifyId == null || spotifyUserDto.spotifyRefreshToken == null || spotifyUserDto.spotifyAccessToken == null){
       throw new BadRequestException();
     }
-   return this.service.loginSpotifyAccount(id, spotifyUserDto);
+   return await this.service.loginSpotifyAccount(id, spotifyUserDto);
    
   }
 

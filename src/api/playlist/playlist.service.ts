@@ -47,11 +47,13 @@ export class PlaylistService {
         const user = await this.userService.findById(userId);
         if(!user) throw new NotFoundException('user not found with id '+userId);
         const spotifyId = user.spotifyUser.spotifyId;
+        createPlaylistBody.description = createPlaylistBody.description + ' | TAGS : '+tags
         if(!spotifyId) throw new BadRequestException('no spotify user found for this user')
         const createdPlaylist = await this.spotifyService.createPlaylist(spotifyId, createPlaylistBody);
         const playlist = this.dtoToEntitySpotifyPlaylistMapping(createdPlaylist)
         playlist.userId = userId;
         playlist.tags = tags;
+
         Playlist.save(playlist);
         return playlist;
     }
@@ -71,11 +73,10 @@ export class PlaylistService {
         const user = await this.userService.findById(userId);
         if(!user) throw new NotFoundException('user not found with id '+userId);
         const spotifyId = user.spotifyUser.spotifyId;
-        createPlaylistBody.description = "playlist créée avec les tags : "+tags;
         const existingPlaylist = await this.getPlaylistByTags(userId, tags);
         let playlist;
         if(existingPlaylist){
-            playlist = existingPlaylist;
+            throw new BadRequestException('playlist with tags : '+tags+" already existing")
         }
         else{
             playlist = await this.createPlaylist(userId, createPlaylistBody, tags)
@@ -86,13 +87,54 @@ export class PlaylistService {
         let offset : number = 0 ;
         const limit : number = 100;
         while(doRequest) {
-            console.log(playlist)
             await this.spotifyService.updateItemsPlaylist(spotifyId, tracks.data.map(t => t.track.spotifyTrack.uri), playlist.spotifyPlaylist.spotifyPlaylistId);
             offset ++ ;
             doRequest = tracks.data.length>(offset*limit);
         }
 
         return playlist;
+    }
+
+    async updatePlaylist(userId : string, playlistId : string, tags : string[], updatePlaylistBody : CreateSpotifyPlaylistDto){
+        const user = await this.userService.findById(userId);
+        if(!user) throw new NotFoundException('user not found with id '+userId);
+        const spotifyId = user.spotifyUser.spotifyId;
+        
+        const playlist = await this.getPlaylistById(userId,playlistId);
+        if(!playlist){
+            throw new NotFoundException('playlist not found with id : '+playlistId)
+        }
+        const copyTags = [...tags]
+        const isNewTags : boolean = copyTags.filter(element=>{ return !playlist.tags.includes(element)}).length>0;
+        if(isNewTags){
+            const existingPlaylist = await this.getPlaylistByTags(userId, tags);
+            if(existingPlaylist){
+                throw new BadRequestException('playlist with tags : '+tags+" already existing")
+            }
+        }
+        playlist.description = updatePlaylistBody.description;
+        playlist.name = updatePlaylistBody.name;
+        playlist.tags = tags;
+        Playlist.save(playlist);
+
+        this.spotifyService.updateDetailsPlaylist(spotifyId,updatePlaylistBody, playlist.spotifyPlaylist.spotifyPlaylistId);
+        if(isNewTags){
+            const tracks = await this.taggedtrackService.getTaggedTracks(userId,0,Number.MAX_VALUE, tags,"");
+            let doRequest : boolean = true;
+    
+            let offset : number = 0 ;
+            const limit : number = 100;
+            while(doRequest) {
+                await this.spotifyService.updateItemsPlaylist(spotifyId, tracks.data.map(t => t.track.spotifyTrack.uri), playlist.spotifyPlaylist.spotifyPlaylistId);
+                offset ++ ;
+                doRequest = tracks.data.length>(offset*limit);
+            }
+        }
+        return playlist;
+    }
+
+    async deletePlaylist(playlistId : string){
+        Playlist.delete(playlistId);
     }
 
     dtoToEntitySpotifyPlaylistMapping(spotifyPlaylistDto : SpotifyPaginationPlaylistsDto) : Playlist{

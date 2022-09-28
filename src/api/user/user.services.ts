@@ -73,9 +73,9 @@ export class UserService {
       spotifyUserEntity.tokenCreation = new Date();
       spotifyUserEntity.expiresIn = spotifyUser.expiresIn;
       user.spotifyUser = spotifyUserEntity;
-      User.save(user);
+      await User.save(user);
   
-    return this.authService.refreshJwtToken(user.id);
+    return await this.authService.refreshJwtToken(user.id);
   }
   catch(err){
     throw new BadRequestException(err);
