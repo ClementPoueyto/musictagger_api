@@ -88,7 +88,8 @@ export class SpotifyService {
     const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
     const res =await this.httpService.axiosRef.put(this.SPOTIFY_URL + "playlists/"+playlistId,spotifyPlaylistDetail, { headers: this.getHeaders(token) })
     .catch((e)=>{
-      console.log(e)
+      console.log(e.response)
+
       if(e.response.status == HttpStatus.UNAUTHORIZED){
         console.log(e)
       }
@@ -102,7 +103,7 @@ export class SpotifyService {
 
   async getPlaylistTracks(spotifyUserId: string,playlistId : string, limit : number = 50, offset : number=0){
     const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
-    const res =await this.httpService.axiosRef.get(this.SPOTIFY_URL + "playlists/"+playlistId+"/tracks?limit="+limit+"&offset="+offset, { headers: this.getHeaders(token) })
+    const res =await this.httpService.axiosRef.get(this.SPOTIFY_URL + "playlists/"+playlistId+"/tracks?limit="+limit+"&offset="+offset*limit, { headers: this.getHeaders(token) })
     .catch((e)=>{
       if(e.response.status == HttpStatus.UNAUTHORIZED){
         console.log(e)

@@ -93,19 +93,14 @@ export class TaggedTrackService {
         return resultDto;
     }
 
-    async getTaggedTracks(userId : string, page : number = 0, limit : number = 50, tags : Array<String> = [], query : string = "") : Promise<PaginatedResultDto<TaggedTrackDto>>{
+    async getTaggedTracks(userId : string, page : number = 0, limit : number = 50, tags : Array<String> = [], query : string = "", onlyMetadata? : boolean) : Promise<PaginatedResultDto<TaggedTrackDto>>{
         if(!limit || limit > 50) {limit = 50};
         if(!page) { page = 0;}
         let taggedTracksBuilder = await TaggedTrack.createQueryBuilder("taggedtrack")
         .innerJoinAndSelect("taggedtrack.track", "track")
         .where("taggedtrack.userId = :id", {id : userId});
-        let filters = {}
-        for(let n = 0; n<tags.length; n++){
-            filters={}
-            filters[n]=tags[n]
-            taggedTracksBuilder
-            .andWhere("tags && ARRAY[:"+n+"]", filters)
-        }
+        taggedTracksBuilder
+            .andWhere("tags @> :filters", {filters : tags})
         taggedTracksBuilder
         .andWhere("(LOWER(track.title) LIKE LOWER(:query) OR LOWER(track.artistName) LIKE LOWER(:query) OR LOWER(track.albumTitle) LIKE LOWER(:query))",
         { 
@@ -114,6 +109,19 @@ export class TaggedTrackService {
         taggedTracksBuilder.orderBy("taggedtrack.id", "DESC")
         .limit(limit || 50)
         .offset(page*limit || 0)
+        if(onlyMetadata){
+            const res = await taggedTracksBuilder.getCount();
+            const resultDto : PaginatedResultDto<TaggedTrackDto>= {
+                data : null,
+                metadata : {
+                    total : res,
+                    page : null,
+                    limit : null
+                }
+            }
+            return resultDto;
+        }
+        else{
         const res = await taggedTracksBuilder.getManyAndCount();
         const resultDto : PaginatedResultDto<TaggedTrackDto>= {
             data : plainToInstance(TaggedTrackDto, res[0], { excludeExtraneousValues: true }),
@@ -123,8 +131,10 @@ export class TaggedTrackService {
                 limit : limit
             }
         }
+    
           
 
         return resultDto;
+    }
     }
 }

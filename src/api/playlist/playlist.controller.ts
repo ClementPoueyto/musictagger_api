@@ -2,7 +2,9 @@ import { BadRequestException, Controller, Get, Put, Inject, Param, ParseArrayPip
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
+import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
 import { TrackDto } from '../track/dto/track.dto';
+import { PaginatedResultDto } from './dto/paginated-result.dto';
 import { PlaylistDto } from './dto/playlist.dto';
 import { PlaylistService } from './playlist.service';
 
@@ -18,11 +20,13 @@ export class PlaylistController {
     @ApiOkResponse({description: 'get playlist tracks' })
     @Get(':id/tracks')
     async getPlaylistTracks(@Req() req: any, @Param('id', ParseIntPipe) playlistId : string ,@Query('userId') userId : string
-    ) : Promise<TrackDto[]> {
+    , @Query('size') size : number = 50,
+     @Query('page') page : number = 0,
+    ) : Promise<PaginatedResultDto<TrackDto>> {
       if(!userId) throw new BadRequestException('userId missing');
       if(userId!=req.user.id) throw new UnauthorizedException();
-      const playlist =await this.playlistService.getPlaylistTracks(userId, playlistId);
-      return  plainToInstance(TrackDto, playlist);
+      const playlist =await this.playlistService.getPlaylistTracks(userId, playlistId, page, size);
+      return { data :plainToInstance(TrackDto, playlist.data), metadata : playlist.metadata}
     }
     
 
@@ -78,8 +82,18 @@ export class PlaylistController {
       if(!userId) throw new BadRequestException('userId missing');
       if(userId!=req.user.id) throw new UnauthorizedException();
       const playlist =await this.playlistService.deletePlaylist(playlistId);
+      return  plainToInstance(PlaylistDto, playlist);
     }
     
-
+    @UseGuards(JwtAuthGuard)
+    @ApiOkResponse({description: 'get size playlist' })
+    @Post()
+    async getSizePlaylist(@Req() req: any,@Query('userId') userId : string
+    ) : Promise<PlaylistDto> {
+      if(!userId) throw new BadRequestException('userId missing');
+      if(userId!=req.user.id) throw new UnauthorizedException();
+      const playlist =await this.playlistService.generatePlaylistItems(userId, req.body.tags, req.body.playlist);
+      return  plainToInstance(PlaylistDto, playlist);
+    }
 
 }

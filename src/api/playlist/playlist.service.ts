@@ -4,9 +4,11 @@ import { SpotifyPaginationPlaylistsDto } from '../spotify/dto/spotify-pagination
 import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
 import { SpotifyService } from '../spotify/spotify.service';
 import { TaggedTrackService } from '../tagged-track/tagged-track.service';
+import { TrackDto } from '../track/dto/track.dto';
 import { Track } from '../track/entities/track.entity';
 import { UserService } from '../user/user.services';
 import { CreateSpotifyPlaylistDto } from './dto/create-spotify-playlist.dto';
+import { PaginatedResultDto } from './dto/paginated-result.dto';
 import { Playlist } from './entities/playlist.entity';
 import { SpotifyPlaylist } from './entities/spotify-playlist.entity';
 
@@ -31,11 +33,20 @@ export class PlaylistService {
         return playlist;
     }
 
-    async getPlaylistTracks(userId : string, playlistId : string){
+    async getPlaylistTracks(userId : string, playlistId : string, page : number =0, limit : number = 50){
+        if(!limit || limit > 50) {limit = 50};
+        if(!page) { page = 0;}
         const playlist = await this.getPlaylistById(userId, playlistId);
-        const tracks = await this.spotifyService.getPlaylistTracks(playlist.spotifyPlaylist.spotifyUserId,playlist.spotifyPlaylist.spotifyPlaylistId);
-        const spotifyTracks : SpotifyTrackDto[] = tracks.items.flatMap(it=>  it.track);
-        return spotifyTracks.map(tr=> this.dtoToEntitySpotifyTrackMapping(tr))
+        const tracks = await this.spotifyService.getPlaylistTracks(playlist.spotifyPlaylist.spotifyUserId,playlist.spotifyPlaylist.spotifyPlaylistId, limit,page);
+        const spotifyTracks : PaginatedResultDto<Track> = {
+            data : tracks.items.flatMap(it=>  it.track).map(tr=> this.dtoToEntitySpotifyTrackMapping(tr)),
+            metadata : {
+                total : tracks.total,
+                page : page,
+                limit : tracks.limit
+            }
+        }
+        return spotifyTracks;
     }
 
     async getPlaylists(userId : string){
@@ -57,14 +68,14 @@ export class PlaylistService {
         Playlist.save(playlist);
         return playlist;
     }
+    
 
     async getPlaylistByTags(userId : string, tags : string[]){
         let playlistBuilder = await Playlist.createQueryBuilder("playlist")
         .where("playlist.userId = :id", {id : userId})
-        for(let tag of tags){
-            playlistBuilder = playlistBuilder   
-            .andWhere("tags && ARRAY[:...filters]", { filters: [tag] })
-        }
+        .andWhere("tags <@ :tags", {tags : tags})
+        .andWhere("array_length(tags,1) = :size", {size : tags.length})
+
         const res = await playlistBuilder.getOne();
         return res;
     }
@@ -105,20 +116,24 @@ export class PlaylistService {
             throw new NotFoundException('playlist not found with id : '+playlistId)
         }
         const copyTags = [...tags]
-        const isNewTags : boolean = copyTags.filter(element=>{ return !playlist.tags.includes(element)}).length>0;
+        const copyOldTags = [...playlist.tags]
+        const isNewTags : boolean = ((copyTags.filter(element=>{ return !playlist.tags.includes(element)}).length>0)||(copyOldTags.filter(element=>{ return !tags.includes(element)}).length>0));
         if(isNewTags){
             const existingPlaylist = await this.getPlaylistByTags(userId, tags);
             if(existingPlaylist){
                 throw new BadRequestException('playlist with tags : '+tags+" already existing")
             }
         }
-        playlist.description = updatePlaylistBody.description;
+        console.log(isNewTags)
+        updatePlaylistBody.description = updatePlaylistBody.description.split('| TAGS :')[0]+ ' | TAGS : '+tags;
+        playlist.description = updatePlaylistBody.description 
         playlist.name = updatePlaylistBody.name;
         playlist.tags = tags;
         Playlist.save(playlist);
 
-        this.spotifyService.updateDetailsPlaylist(spotifyId,updatePlaylistBody, playlist.spotifyPlaylist.spotifyPlaylistId);
+        await this.spotifyService.updateDetailsPlaylist(spotifyId,updatePlaylistBody, playlist.spotifyPlaylist.spotifyPlaylistId);
         if(isNewTags){
+            console.log("new tags : "+tags)
             const tracks = await this.taggedtrackService.getTaggedTracks(userId,0,Number.MAX_VALUE, tags,"");
             let doRequest : boolean = true;
     
