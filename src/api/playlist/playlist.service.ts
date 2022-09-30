@@ -124,7 +124,6 @@ export class PlaylistService {
                 throw new BadRequestException('playlist with tags : '+tags+" already existing")
             }
         }
-        console.log(isNewTags)
         updatePlaylistBody.description = updatePlaylistBody.description.split('| TAGS :')[0]+ ' | TAGS : '+tags;
         playlist.description = updatePlaylistBody.description 
         playlist.name = updatePlaylistBody.name;
@@ -133,7 +132,6 @@ export class PlaylistService {
 
         await this.spotifyService.updateDetailsPlaylist(spotifyId,updatePlaylistBody, playlist.spotifyPlaylist.spotifyPlaylistId);
         if(isNewTags){
-            console.log("new tags : "+tags)
             const tracks = await this.taggedtrackService.getTaggedTracks(userId,0,Number.MAX_VALUE, tags,"");
             let doRequest : boolean = true;
     

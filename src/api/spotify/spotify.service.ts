@@ -88,7 +88,7 @@ export class SpotifyService {
     const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
     const res =await this.httpService.axiosRef.put(this.SPOTIFY_URL + "playlists/"+playlistId,spotifyPlaylistDetail, { headers: this.getHeaders(token) })
     .catch((e)=>{
-      console.log(e.response)
+      console.log(e)
 
       if(e.response.status == HttpStatus.UNAUTHORIZED){
         console.log(e)
