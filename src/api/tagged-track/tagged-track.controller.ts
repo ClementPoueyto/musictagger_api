@@ -51,7 +51,7 @@ export class TaggedTrackController {
 
     @UseGuards(JwtAuthGuard)
     @ApiOkResponse({description: 'search tags' })
-    @Get('pagination')
+    @Get()
     async searchTaggedTracks(@Req() req: any,@Query('userId') userId : string, @Query('size') size : number = 50,
      @Query('page') page : number = 0, @Query('tags',new ParseArrayPipe({ items: String, separator: ',', optional : true })) tags?: string[],
       @Query('query') query? : string, @Query('onlyMetadata') onlyMetadata? : boolean

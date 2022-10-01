@@ -1,6 +1,8 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { In, Like } from 'typeorm';
+import { Playlist } from '../playlist/entities/playlist.entity';
+import { PlaylistService } from '../playlist/playlist.service';
 import { TrackDto } from '../track/dto/track.dto';
 import { Track } from '../track/entities/track.entity';
 import { TrackService } from '../track/track.service';
@@ -15,6 +17,9 @@ export class TaggedTrackService {
 
     @Inject(TrackService)
     private readonly trackService: TrackService;
+
+    @Inject(forwardRef(()=>PlaylistService))
+    private readonly playlistService: PlaylistService;
 
     constructor() { }
 
@@ -33,9 +38,15 @@ export class TaggedTrackService {
         taggedTrack.tags.includes(createTag.tag)?null:taggedTrack.tags.push(createTag.tag)
         taggedTrack.userId = userId;
         taggedTrack.track = track;
-        return TaggedTrack.save(taggedTrack);
+
+        await TaggedTrack.save(taggedTrack);
+
+        this.playlistsChangement(userId, taggedTrack.tags)
+        return taggedTrack;
 
     }
+
+
 
     async deleteTagToTrack(deleteTag: CreateTaggedTrackDto, userId: string) {
         const track = await this.trackService.getTrackById(deleteTag.trackId, false);
@@ -48,15 +59,26 @@ export class TaggedTrackService {
         else{
             taggedTrack.tags = [];
         }
+        const oldTags = [...taggedTrack.tags]
         taggedTrack.tags= taggedTrack.tags.filter(e=> {return e != deleteTag.tag});
         if(taggedTrack.tags.length==0){
-            TaggedTrack.remove(taggedTrack);
-            return;
+            await TaggedTrack.remove(taggedTrack);
         }
-        taggedTrack.userId = userId;
-        taggedTrack.track = track;
-        return TaggedTrack.save(taggedTrack);
+        else{
+            taggedTrack.userId = userId;
+            taggedTrack.track = track;
+            await TaggedTrack.save(taggedTrack);
+        }
+        this.playlistsChangement(userId, oldTags);
 
+
+    }
+
+    private async playlistsChangement(userId : string, tags : string[]){
+        const playlists  :Playlist[] = await this.playlistService.getPlaylistsContainingTags(userId, tags);
+        for(let playlist of playlists){
+            this.playlistService.updatePlaylistTracks(userId, playlist, playlist.tags)
+        }
     }
 
     async getTaggedTrackByTrackId(trackId : string, userId : string) : Promise<TaggedTrackDto>{

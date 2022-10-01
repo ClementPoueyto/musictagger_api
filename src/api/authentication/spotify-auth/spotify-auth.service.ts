@@ -69,7 +69,6 @@ export class SpotifyAuthService {
     const tokenDate = spotifyUser.tokenCreation;
     tokenDate.setSeconds(spotifyUser.tokenCreation.getSeconds()+spotifyUser.expiresIn);
     if(tokenDate.getTime()<=new Date().getTime()){
-      console.log("new token");
       const token = await this.refresh_access_token(spotifyUser.spotifyRefreshToken, spotifyUser.spotifyId);
       return token.access_token;
     }

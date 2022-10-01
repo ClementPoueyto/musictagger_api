@@ -18,24 +18,24 @@ export class GoogleAuthenticationService {
   async googleLogin(req ) {
     const googleUser : GoolgleAuthDto = req.user
     let user :User ;
-    
+    if (!googleUser) {
+      return 'No user from google'
+    }
        user  = await User.findOne({
         where: {email: googleUser.email },
       });
-      if(!user.isRegisteredWithGoogle){
+      if(user&&!user.isRegisteredWithGoogle){
         throw new UnauthorizedException('Account is not logged with Google')
       }
       if (!user) {
         user = new User();
         user.isRegisteredWithGoogle = true;
         user.email = googleUser.email;
-        User.save(user);
+        await User.save(user);
       }
-      if (!googleUser) {
-      return 'No user from google'
-    }
-
-    return (await this.authenticationService.refreshJwtToken(user.id)).jwt_token
+      
+      const refresh = await this.authenticationService.refreshJwtToken(user.id);
+    return refresh.jwt_token;
     
   }
  

@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException, UnauthorizedException, BadRequestException, HttpStatus, InternalServerErrorException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, UnauthorizedException, BadRequestException, HttpStatus, InternalServerErrorException, forwardRef } from '@nestjs/common';
 import { iif } from 'rxjs';
 import { SpotifyPaginationPlaylistsDto } from '../spotify/dto/spotify-pagination-playlists.dto';
 import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
@@ -21,7 +21,7 @@ export class PlaylistService {
     @Inject()
     private readonly userService : UserService;
 
-    @Inject()
+    @Inject(forwardRef(()=>TaggedTrackService))
     private readonly taggedtrackService : TaggedTrackService;
 
     constructor(){}
@@ -59,24 +59,34 @@ export class PlaylistService {
         if(!user) throw new NotFoundException('user not found with id '+userId);
         const spotifyId = user.spotifyUser.spotifyId;
         createPlaylistBody.description = createPlaylistBody.description + ' | TAGS : '+tags
+        createPlaylistBody.name = createPlaylistBody.name + ' | MUSICTAG'
+
         if(!spotifyId) throw new BadRequestException('no spotify user found for this user')
         const createdPlaylist = await this.spotifyService.createPlaylist(spotifyId, createPlaylistBody);
         const playlist = this.dtoToEntitySpotifyPlaylistMapping(createdPlaylist)
         playlist.userId = userId;
         playlist.tags = tags;
 
-        Playlist.save(playlist);
+        await Playlist.save(playlist);
         return playlist;
     }
     
 
-    async getPlaylistByTags(userId : string, tags : string[]){
+    async getPlaylistByTags(userId : string, tags : string[]): Promise<Playlist>{
         let playlistBuilder = await Playlist.createQueryBuilder("playlist")
         .where("playlist.userId = :id", {id : userId})
         .andWhere("tags <@ :tags", {tags : tags})
         .andWhere("array_length(tags,1) = :size", {size : tags.length})
 
         const res = await playlistBuilder.getOne();
+        return res;
+    }
+
+    async getPlaylistsContainingTags(userId : string, tags : string[]) : Promise<Playlist[]>{
+        let playlistBuilder = await Playlist.createQueryBuilder("playlist")
+        .where("playlist.userId = :id", {id : userId})
+        .andWhere("tags <@ :tags", {tags : tags})
+        const res = await playlistBuilder.getMany();
         return res;
     }
 
@@ -109,12 +119,14 @@ export class PlaylistService {
     async updatePlaylist(userId : string, playlistId : string, tags : string[], updatePlaylistBody : CreateSpotifyPlaylistDto){
         const user = await this.userService.findById(userId);
         if(!user) throw new NotFoundException('user not found with id '+userId);
+        if(user&&!user.spotifyUser) throw new NotFoundException('no spotify user');
         const spotifyId = user.spotifyUser.spotifyId;
         
         const playlist = await this.getPlaylistById(userId,playlistId);
         if(!playlist){
             throw new NotFoundException('playlist not found with id : '+playlistId)
         }
+        
         const copyTags = [...tags]
         const copyOldTags = [...playlist.tags]
         const isNewTags : boolean = ((copyTags.filter(element=>{ return !playlist.tags.includes(element)}).length>0)||(copyOldTags.filter(element=>{ return !tags.includes(element)}).length>0));
@@ -125,32 +137,42 @@ export class PlaylistService {
             }
         }
         updatePlaylistBody.description = updatePlaylistBody.description.split('| TAGS :')[0]+ ' | TAGS : '+tags;
+        updatePlaylistBody.name = updatePlaylistBody.name.split('| MUSICTAG')[0]+ ' | MUSICTAG';
+
         playlist.description = updatePlaylistBody.description 
         playlist.name = updatePlaylistBody.name;
         playlist.tags = tags;
-        Playlist.save(playlist);
+        await Playlist.save(playlist);
 
         await this.spotifyService.updateDetailsPlaylist(spotifyId,updatePlaylistBody, playlist.spotifyPlaylist.spotifyPlaylistId);
         if(isNewTags){
-            const tracks = await this.taggedtrackService.getTaggedTracks(userId,0,Number.MAX_VALUE, tags,"");
-            let doRequest : boolean = true;
-    
-            let offset : number = 0 ;
-            const limit : number = 100;
-            while(doRequest) {
-                await this.spotifyService.updateItemsPlaylist(spotifyId, tracks.data.map(t => t.track.spotifyTrack.uri), playlist.spotifyPlaylist.spotifyPlaylistId);
-                offset ++ ;
-                doRequest = tracks.data.length>(offset*limit);
-            }
+            this.updatePlaylistTracks(userId , playlist , tags );
         }
         return playlist;
     }
 
-    async deletePlaylist(playlistId : string){
-        Playlist.delete(playlistId);
+    async updatePlaylistTracks(userId : string, playlist : Playlist, tags : string[]){
+        const user = await this.userService.findById(userId);
+        if(!user) throw new NotFoundException('user not found with id '+userId);
+        if(user&&!user.spotifyUser) throw new NotFoundException('no spotify user');
+        const spotifyId = user.spotifyUser.spotifyId;
+        const tracks = await this.taggedtrackService.getTaggedTracks(userId,0,Number.MAX_VALUE, tags,"");
+        let doRequest : boolean = true;
+
+        let offset : number = 0 ;
+        const limit : number = 100;
+        while(doRequest) {
+            await this.spotifyService.updateItemsPlaylist(spotifyId, tracks.data.map(t => t.track.spotifyTrack.uri), playlist.spotifyPlaylist.spotifyPlaylistId);
+            offset ++ ;
+            doRequest = tracks.data.length>(offset*limit);
+        }
     }
 
-    dtoToEntitySpotifyPlaylistMapping(spotifyPlaylistDto : SpotifyPaginationPlaylistsDto) : Playlist{
+    async deletePlaylist(playlistId : string){
+        await Playlist.delete(playlistId);
+    }
+
+    private dtoToEntitySpotifyPlaylistMapping(spotifyPlaylistDto : SpotifyPaginationPlaylistsDto) : Playlist{
         const playlist : Playlist = new Playlist();
         const spotifyPlaylist : SpotifyPlaylist = new SpotifyPlaylist();
         spotifyPlaylist.spotifyUserId = spotifyPlaylistDto.owner.id;

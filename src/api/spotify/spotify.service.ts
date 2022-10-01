@@ -111,8 +111,6 @@ export class SpotifyService {
     }
     );
     if(res&&res.status==HttpStatus.OK){
-      console.log(res.data)
-
       return plainToInstance(SpotifyPaginationTracksDto, res.data, { excludeExtraneousValues: true })
     }
   }
