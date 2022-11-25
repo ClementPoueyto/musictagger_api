@@ -1,13 +1,13 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { PlaylistService } from 'api/playlist/playlist.service';
+import { TrackDto } from 'api/track/dto/track.dto';
+import { TrackService } from 'api/track/track.service';
 import { plainToInstance } from 'class-transformer';
-import { Playlist } from '../playlist/entities/playlist.entity';
-import { PlaylistService } from '../playlist/playlist.service';
-import { TrackDto } from '../track/dto/track.dto';
-import { TrackService } from '../track/track.service';
+import { Playlist } from 'shared/entities/playlist.entity';
+import { TaggedTrack } from 'shared/entities/tagged-track.entity';
 import { CreateTaggedTrackDto } from './dto/create-tagged-track.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
 import { TaggedTrackDto } from './dto/tagged-track.dto';
-import { TaggedTrack } from './entities/tagged-track.entity';
 
 @Injectable()
 export class TaggedTrackService {

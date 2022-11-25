@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { User } from 'api/user/entities/user.entity';
+import { User } from 'shared/entities/user.entity';
 import { AuthService } from './auth.services';
 import { GoolgleAuthDto } from './dto/google-auth.dto';
 

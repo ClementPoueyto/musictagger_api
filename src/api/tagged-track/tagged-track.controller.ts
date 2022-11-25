@@ -15,11 +15,11 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
+import { TaggedTrack } from 'shared/entities/tagged-track.entity';
 import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
 import { CreateTaggedTrackDto } from './dto/create-tagged-track.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
 import { TaggedTrackDto } from './dto/tagged-track.dto';
-import { TaggedTrack } from './entities/tagged-track.entity';
 import { TaggedTrackService } from './tagged-track.service';
 
 @Controller('tags')

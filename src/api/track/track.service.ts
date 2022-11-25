@@ -1,13 +1,14 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
-import { SpotifyService } from '../spotify/spotify.service';
-import { TaggedTrack } from '../tagged-track/entities/tagged-track.entity';
-import { UserService } from '../user/user.services';
+
 import { TrackDto } from './dto/track.dto';
-import { Track } from './entities/track.entity';
 import { BadRequestException } from '@nestjs/common';
 import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
+import { Track } from 'shared/entities/track.entity';
+import { SpotifyService } from 'api/spotify/spotify.service';
+import { UserService } from 'api/user/user.services';
+import { TaggedTrack } from 'shared/entities/tagged-track.entity';
+import { SpotifyTrackDto } from 'api/spotify/dto/spotify-track.dto';
 
 @Injectable()
 export class TrackService {

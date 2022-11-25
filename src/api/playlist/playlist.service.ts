@@ -6,16 +6,16 @@ import {
   BadRequestException,
   forwardRef,
 } from '@nestjs/common';
-import { SpotifyPaginationPlaylistsDto } from '../spotify/dto/spotify-pagination-playlists.dto';
-import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
-import { SpotifyService } from '../spotify/spotify.service';
-import { TaggedTrackService } from '../tagged-track/tagged-track.service';
-import { Track } from '../track/entities/track.entity';
-import { UserService } from '../user/user.services';
 import { CreateSpotifyPlaylistDto } from './dto/create-spotify-playlist.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
-import { Playlist } from './entities/playlist.entity';
-import { SpotifyPlaylist } from './entities/spotify-playlist.entity';
+import { Track } from 'shared/entities/track.entity';
+import { SpotifyPlaylist } from 'shared/entities/spotify-playlist.entity';
+import { Playlist } from 'shared/entities/playlist.entity';
+import { UserService } from 'api/user/user.services';
+import { TaggedTrackService } from 'api/tagged-track/tagged-track.service';
+import { SpotifyService } from 'api/spotify/spotify.service';
+import { SpotifyTrackDto } from 'api/spotify/dto/spotify-track.dto';
+import { SpotifyPaginationPlaylistsDto } from 'api/spotify/dto/spotify-pagination-playlists.dto';
 
 @Injectable()
 export class PlaylistService {

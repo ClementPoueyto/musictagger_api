@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthLoginDto } from './dto/auth.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'api/user/entities/user.entity';
+import { User } from 'shared/entities/user.entity';
 import { JwtDto } from './dto/jwt.dto';
 
 @Injectable()

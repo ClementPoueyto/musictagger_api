@@ -5,12 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { SpotifyUserDto } from 'api/authentication/spotify-auth/dto/spotify-user.dto';
+import { SpotifyAuthService } from 'api/authentication/spotify-auth/spotify-auth.service';
+import { SpotifyUser } from 'shared/entities/spotify-user.entity';
+import { User } from 'shared/entities/user.entity';
 import { AuthService } from '../authentication/auth/auth.services';
-import { SpotifyUserDto } from '../authentication/spotify-auth/dto/spotify-user.dto';
-import { SpotifyUser } from '../authentication/spotify-auth/entities/spotify-user.entity';
-import { SpotifyAuthService } from '../authentication/spotify-auth/spotify-auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -27,7 +27,7 @@ export class UserService {
     user.password = createUserDto.password;
     user.firstname = createUserDto.firstname;
     user.lastname = createUserDto.lastname;
-    const userCreated = User.save(user).catch((_) => {
+    const userCreated = User.save(user).catch(() => {
       throw new ConflictException('Login already exists');
     });
     return userCreated;

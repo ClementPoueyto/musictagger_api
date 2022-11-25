@@ -14,9 +14,9 @@ import {
   Delete,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'api/authentication/auth/guards/jwt-auth.guards';
+import { TrackDto } from 'api/track/dto/track.dto';
 import { plainToInstance } from 'class-transformer';
-import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
-import { TrackDto } from '../track/dto/track.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
 import { PlaylistDto } from './dto/playlist.dto';
 import { PlaylistService } from './playlist.service';

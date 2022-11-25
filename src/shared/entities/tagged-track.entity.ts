@@ -1,4 +1,3 @@
-import { Track } from 'api/track/entities/track.entity';
 import {
   BaseEntity,
   Column,
@@ -8,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import { Track } from './track.entity';
 
 @Entity()
 @Unique(['userId', 'track', 'tags'])

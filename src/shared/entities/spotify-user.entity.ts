@@ -1,4 +1,4 @@
-import { User } from 'api/user/entities/user.entity';
+import { User } from 'shared/entities/user.entity';
 import { BaseEntity, Column, Entity, OneToOne, PrimaryColumn } from 'typeorm';
 
 @Entity()

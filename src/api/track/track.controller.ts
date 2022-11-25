@@ -11,9 +11,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'api/authentication/auth/guards/jwt-auth.guards';
+import { PaginatedResultDto } from 'api/tagged-track/dto/paginated-result.dto';
 import { plainToInstance } from 'class-transformer';
-import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
-import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
 import { TrackDto } from './dto/track.dto';
 import { TrackService } from './track.service';
 

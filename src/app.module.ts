@@ -8,8 +8,6 @@ import { SpotifyModule } from './api/spotify/spotify.module';
 import { TaggedTrackModule } from './api/tagged-track/tagged-track.module';
 import { TrackModule } from './api/track/track.module';
 import { UserModule } from './api/user/user.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { getEnvPath } from './common/helper/env.helper';
 import { TypeOrmConfigService } from './shared/typeorm.service';
 
@@ -29,7 +27,7 @@ console.log(envFilePath);
     TaggedTrackModule,
     PlaylistModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

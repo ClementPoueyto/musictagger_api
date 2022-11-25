@@ -1,4 +1,4 @@
-import { TaggedTrack } from 'api/tagged-track/entities/tagged-track.entity';
+import { TaggedTrack } from 'shared/entities/tagged-track.entity';
 import {
   BaseEntity,
   Column,

@@ -6,9 +6,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SpotifyUser } from 'shared/entities/spotify-user.entity';
 import { SpotifyAccessTokenDto } from './dto/spotify-access-token.dto';
 import { SpotifyUserDto } from './dto/spotify-user.dto';
-import { SpotifyUser } from './entities/spotify-user.entity';
 
 @Injectable()
 export class SpotifyAuthService {
