@@ -1,8 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy, VerifyCallback } from 'passport-jwt';
-import { User } from 'src/api/user/entities/user.entity';
+import { User } from 'api/user/entities/user.entity';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthHelper } from '../auth.helper';
 
 @Injectable()

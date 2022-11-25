@@ -2,17 +2,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
 import { IsEmail, IsNumber } from 'class-validator';
 
-export class UserDto{
-
+export class UserDto {
   @ApiProperty({
-    description : 'firstname account',
-    type : String
+    description: 'firstname account',
+    type: String,
   })
   public firstname: string;
 
   @ApiProperty({
-    description : 'firstname account',
-    type : String
+    description: 'firstname account',
+    type: String,
   })
   public lastname: string;
 
@@ -24,7 +23,7 @@ export class UserDto{
   readonly id: number;
 
   @ApiProperty({
-    description: 'email account'
+    description: 'email account',
   })
   @IsEmail()
   public email: string;
@@ -37,12 +36,12 @@ export class UserDto{
    */
 
   @ApiProperty({
-    description: 'creation date account'
+    description: 'creation date account',
   })
   public createdAt: Date;
 
   @ApiProperty({
-    description: 'last update date account'
+    description: 'last update date account',
   })
   public updatedAt: Date;
 }

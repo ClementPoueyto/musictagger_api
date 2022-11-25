@@ -1,13 +1,12 @@
-import { Expose } from "class-transformer"
+import { Expose } from 'class-transformer';
 
 export class SpotifyExternalIdDto {
+  @Expose()
+  isrc: string;
 
-    @Expose()
-    isrc: string
+  @Expose()
+  ean: string;
 
-    @Expose()
-    ean: string
-
-    @Expose()
-    upc: string
-  }
+  @Expose()
+  upc: string;
+}

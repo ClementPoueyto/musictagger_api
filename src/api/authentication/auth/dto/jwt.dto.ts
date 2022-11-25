@@ -1,12 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class JwtDto {
-
-    constructor(token){
-        this.jwt_token = token;
-    }
-    
-    @ApiProperty()
-    jwt_token: string;
-
+  constructor(token: string) {
+    this.jwt_token = token;
   }
+
+  @ApiProperty()
+  jwt_token: string;
+}

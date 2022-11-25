@@ -9,7 +9,7 @@ import { UserModule } from '../user/user.module';
 @Module({
   providers: [TrackService],
   controllers: [TrackController],
-  exports : [TrackService],
-  imports : [ TypeOrmModule.forFeature([Track]), SpotifyModule, UserModule]
+  exports: [TrackService],
+  imports: [TypeOrmModule.forFeature([Track]), SpotifyModule, UserModule],
 })
 export class TrackModule {}

@@ -1,7 +1,27 @@
-import { BadRequestException, Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Post, Request, UnauthorizedException, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { ApiBadRequestResponse, ApiBearerAuth, ApiConflictResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
-import { classToPlain, plainToInstance } from 'class-transformer';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  ParseIntPipe,
+  Post,
+  Request,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { JwtDto } from '../authentication/auth/dto/jwt.dto';
 import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
 import { SpotifyUserDto } from '../authentication/spotify-auth/dto/spotify-user.dto';
@@ -17,23 +37,29 @@ export class UserController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOkResponse({description: 'Return the corresponding user', type : UserDto})
-  @ApiUnauthorizedResponse({description: 'Invalid Authorization header'})
-  @ApiNotFoundResponse({description: 'User not found'})
-  public async getUser(@Request() req: any,@Param('id', ParseIntPipe) id: string): Promise<UserDto> {
-    if(id != req.user.id){
+  @ApiOkResponse({
+    description: 'Return the corresponding user',
+    type: UserDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid Authorization header' })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  public async getUser(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: string,
+  ): Promise<UserDto> {
+    if (id != req.user.id) {
       throw new UnauthorizedException();
     }
-    const  user = await this.service.showById(id);
+    const user = await this.service.showById(id);
     return plainToInstance(UserDto, user);
   }
 
   @Post()
-  @ApiOkResponse({description: 'Create and Return the user', type : UserDto})
+  @ApiOkResponse({ description: 'Create and Return the user', type: UserDto })
   @ApiBadRequestResponse()
   @ApiConflictResponse({ description: 'Login already exist' })
   public async createUser(@Body() body: CreateUserDto): Promise<UserDto> {
-    const  user = await this.service.create(body);  
+    const user = await this.service.create(body);
     return plainToInstance(UserDto, user);
   }
 
@@ -41,32 +67,38 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiUnauthorizedResponse()
   @ApiBearerAuth()
-  @ApiOkResponse({description: 'login Spotify Account to user'})
-  public async loginSpotifyUser(@Request() req: any,@Param('id', ParseIntPipe) id: string) : Promise<JwtDto>{
+  @ApiOkResponse({ description: 'login Spotify Account to user' })
+  public async loginSpotifyUser(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: string,
+  ): Promise<JwtDto> {
     const spotifyUserDto: SpotifyUserDto = req.body;
-    if(id != req.user.id){
+    if (id != req.user.id) {
       throw new UnauthorizedException();
     }
-    if(spotifyUserDto.spotifyId == null || spotifyUserDto.spotifyRefreshToken == null || spotifyUserDto.spotifyAccessToken == null){
+    if (
+      spotifyUserDto.spotifyId == null ||
+      spotifyUserDto.spotifyRefreshToken == null ||
+      spotifyUserDto.spotifyAccessToken == null
+    ) {
       throw new BadRequestException();
     }
-   return await this.service.loginSpotifyAccount(id, spotifyUserDto);
-   
+    return await this.service.loginSpotifyAccount(id, spotifyUserDto);
   }
 
-  
   @Delete(':id/spotify')
   @UseGuards(JwtAuthGuard)
   @ApiUnauthorizedResponse()
   @ApiBearerAuth()
-  @ApiOkResponse({description: 'logout Spotify Account to user'})
-  public async logoutSpotifyUser(@Request() req: any,@Param('id', ParseIntPipe) id: string) : Promise<JwtDto>{
-    if(id != req.user.id){
+  @ApiOkResponse({ description: 'logout Spotify Account to user' })
+  public async logoutSpotifyUser(
+    @Request() req: any,
+    @Param('id', ParseIntPipe) id: string,
+  ): Promise<JwtDto> {
+    if (id != req.user.id) {
       throw new UnauthorizedException();
     }
-   
+
     return this.service.logoutSpotifyAccount(id);
   }
-
-
 }

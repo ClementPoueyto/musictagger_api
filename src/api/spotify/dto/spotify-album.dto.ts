@@ -1,58 +1,56 @@
-import { Exclude, Expose, Type } from "class-transformer";
-import { SpotifyArtistDto } from "./spotify-artist.dto"
-import { SpotifyExternalUrlsDto } from "./spotify-external-urls.dto"
-import { SpotifyImageDto } from "./spotify-image.dto"
-import { SpotifyRestrictionDto } from "./spotify-restriction.dto"
+import { Exclude, Expose, Type } from 'class-transformer';
+import { SpotifyArtistDto } from './spotify-artist.dto';
+import { SpotifyExternalUrlsDto } from './spotify-external-urls.dto';
+import { SpotifyImageDto } from './spotify-image.dto';
+import { SpotifyRestrictionDto } from './spotify-restriction.dto';
 
 export class SpotifyAlbumDto {
+  @Expose()
+  album_type: string;
 
+  @Expose()
+  total_tracks: number;
 
-    @Expose()
-    album_type: string
+  @Exclude()
+  available_markets: string[];
 
-    @Expose()
-    total_tracks: number
+  @Expose()
+  @Type(() => SpotifyExternalUrlsDto)
+  external_urls: SpotifyExternalUrlsDto;
 
-    @Exclude()
-    available_markets: string[]
+  @Expose()
+  href: string;
 
-    @Expose()
-    @Type(()=>SpotifyExternalUrlsDto)
-    external_urls: SpotifyExternalUrlsDto
+  @Expose()
+  id: string;
 
-    @Expose()
-    href: string
+  @Expose()
+  @Type(() => SpotifyImageDto)
+  images: SpotifyImageDto[];
 
-    @Expose()
-    id: string
+  @Expose()
+  name: string;
 
-    @Expose()
-    @Type(()=>SpotifyImageDto)
-    images: SpotifyImageDto[]
+  @Expose()
+  release_date: string;
 
-    @Expose()
-    name: string
+  @Expose()
+  release_date_precision: string;
 
-    @Expose()
-    release_date: string
+  @Expose()
+  @Type(() => SpotifyRestrictionDto)
+  restrictions: SpotifyRestrictionDto;
 
-    @Expose()
-    release_date_precision: string
+  @Expose()
+  type: string;
 
-    @Expose()
-    @Type(()=>SpotifyRestrictionDto)
-    restrictions: SpotifyRestrictionDto
+  @Expose()
+  uri: string;
 
-    @Expose()
-    type: string
+  @Expose()
+  album_group: string;
 
-    @Expose()
-    uri: string
-
-    @Expose()
-    album_group: string
-
-    @Expose()
-    @Type(()=>SpotifyArtistDto)
-    artists: SpotifyArtistDto[]
-  }
+  @Expose()
+  @Type(() => SpotifyArtistDto)
+  artists: SpotifyArtistDto[];
+}

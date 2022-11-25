@@ -14,14 +14,21 @@ import { getEnvPath } from './common/helper/env.helper';
 import { TypeOrmConfigService } from './shared/typeorm.service';
 
 const envFilePath: string = getEnvPath(`${__dirname}/common/envs`);
-console.log(envFilePath)
+console.log(envFilePath);
 
 @Module({
-  imports: [ConfigModule.forRoot({envFilePath: envFilePath, isGlobal: true }),
+  imports: [
+    ConfigModule.forRoot({ envFilePath: envFilePath, isGlobal: true }),
     TypeOrmModule.forRootAsync({ useClass: TypeOrmConfigService }),
 
-    AuthModule, UserModule, SpotifyAuthModule, SpotifyModule,
-     TrackModule, TaggedTrackModule, PlaylistModule],
+    AuthModule,
+    UserModule,
+    SpotifyAuthModule,
+    SpotifyModule,
+    TrackModule,
+    TaggedTrackModule,
+    PlaylistModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

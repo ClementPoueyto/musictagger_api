@@ -1,13 +1,12 @@
-import { Expose } from "class-transformer"
+import { Expose } from 'class-transformer';
 
 export class SpotifyImageDto {
+  @Expose()
+  url: string;
 
   @Expose()
-  url: string
+  height: number;
 
   @Expose()
-  height: number
-
-  @Expose()
-  width: number
+  width: number;
 }

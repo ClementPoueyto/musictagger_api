@@ -5,7 +5,7 @@ export class AuthLoginDto {
   @ApiProperty()
   @IsEmail()
   email: string;
-  
+
   @ApiProperty()
   @IsNotEmpty()
   password: string;

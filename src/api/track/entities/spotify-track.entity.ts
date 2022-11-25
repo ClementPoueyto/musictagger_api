@@ -1,9 +1,9 @@
-import { Column } from "typeorm";
+import { Column } from 'typeorm';
 
 export class SpotifyTrack {
-    @Column()
-    spotifyId : string;
+  @Column()
+  spotifyId: string;
 
-    @Column()
-    uri : string;
+  @Column()
+  uri: string;
 }

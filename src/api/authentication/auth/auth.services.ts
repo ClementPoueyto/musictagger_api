@@ -1,10 +1,14 @@
-
-import { Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthLoginDto } from './dto/auth.dto';
- import { Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/api/user/entities/user.entity';
+import { User } from 'api/user/entities/user.entity';
 import { JwtDto } from './dto/jwt.dto';
 
 @Injectable()
@@ -15,22 +19,17 @@ export class AuthService {
   @Inject(JwtService)
   private readonly jwtService: JwtService;
 
-
-
-  async login(authLoginDto: AuthLoginDto ) :Promise<JwtDto>{
+  async login(authLoginDto: AuthLoginDto): Promise<JwtDto> {
     const user = await this.validateUser(authLoginDto);
 
     return this.refreshJwtToken(user.id);
   }
 
-  async loginGoogle(user) {
+  async loginGoogle(user: { id: string }) {
     return this.refreshJwtToken(user.id);
-
   }
 
-
-
-  async refreshJwtToken(userId : string) : Promise<JwtDto> {
+  async refreshJwtToken(userId: string): Promise<JwtDto> {
     const payload = {
       userId: userId,
     };
@@ -41,16 +40,15 @@ export class AuthService {
 
   async validateUser(authLoginDto: AuthLoginDto): Promise<User> {
     const { email, password } = authLoginDto;
-    const user = await this.userRepository.findOne({where:{email : email}, relations : { spotifyUser : true}});
-    if(!user) throw new NotFoundException();
-    if (!await user.validatePassword(password)) {
+    const user = await this.userRepository.findOne({
+      where: { email: email },
+      relations: { spotifyUser: true },
+    });
+    if (!user) throw new NotFoundException();
+    if (!(await user.validatePassword(password))) {
       throw new UnauthorizedException();
     }
 
     return user;
   }
-
-
-
- 
 }

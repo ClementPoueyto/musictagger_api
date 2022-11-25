@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/api/user/entities/user.entity';
+import { User } from 'api/user/entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthHelper } from './auth.helper';
 import { AuthService } from './auth.services';
@@ -21,11 +21,18 @@ import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
         secret: config.get('JWT_SECRET'),
         signOptions: { expiresIn: config.get('JWT_EXPIRES') },
       }),
-    }),TypeOrmModule.forFeature([User],
-      )
+    }),
+    TypeOrmModule.forFeature([User]),
   ],
-  controllers:[AuthController, GoogleAuthController],
-  providers: [AuthService, GoogleAuthenticationService,JwtStrategy, RefreshJwtStrategy,GoogleStrategy,AuthHelper],
-  exports:[AuthService,GoogleAuthenticationService, AuthHelper]
+  controllers: [AuthController, GoogleAuthController],
+  providers: [
+    AuthService,
+    GoogleAuthenticationService,
+    JwtStrategy,
+    RefreshJwtStrategy,
+    GoogleStrategy,
+    AuthHelper,
+  ],
+  exports: [AuthService, GoogleAuthenticationService, AuthHelper],
 })
 export class AuthModule {}

@@ -1,23 +1,29 @@
-import { Injectable, HttpException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from 'src/api/user/entities/user.entity';
+import { User } from 'api/user/entities/user.entity';
 
 @Injectable()
 export class AuthHelper {
-
   constructor(private readonly jwt: JwtService) {
     this.jwt = jwt;
   }
 
   // Decoding the JWT Token
   public async decode(token: string): Promise<unknown> {
-    return this.jwt.decode(token, null);
+    return this.jwt.decode(token, undefined);
   }
 
   // Get User by User ID we get from decode()
   public async validateUser(decoded: any): Promise<User> {
-    return User.findOne({where : {id :decoded.userId}, relations : { spotifyUser : true }});
+    const user = await User.findOne({
+      where: { id: decoded.userId },
+      relations: { spotifyUser: true },
+    });
+    if (!user) {
+      throw new Error('no user');
+    }
+    return user;
   }
 
   // Generate JWT Token
@@ -35,22 +41,5 @@ export class AuthHelper {
     const salt: string = bcrypt.genSaltSync(10);
 
     return bcrypt.hashSync(password, salt);
-  }
-
-  // Validate JWT Token, throw forbidden error if JWT Token is invalid
-  private async validate(token: string): Promise<boolean | never> {
-    const decoded: unknown = this.jwt.verify(token);
-
-    if (!decoded) {
-      throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
-    }
-
-    const user: User = await this.validateUser(decoded);
-
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-
-    return true;
   }
 }

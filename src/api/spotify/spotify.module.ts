@@ -8,6 +8,6 @@ import { HttpModule } from '@nestjs/axios';
   imports: [SpotifyAuthModule, HttpModule],
   providers: [SpotifyService],
   controllers: [SpotifyController],
-  exports : [SpotifyService]
+  exports: [SpotifyService],
 })
 export class SpotifyModule {}

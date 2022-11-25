@@ -1,10 +1,8 @@
 import { Expose, Type } from 'class-transformer';
 import { SpotifyTrackDto } from './spotify-track.dto';
 
-export class SpotifySavedTrackDto {
-  @Expose()
-  added_at: Date;
+export class SpotifySeveralTracksDto {
   @Expose()
   @Type(() => SpotifyTrackDto)
-  track: SpotifyTrackDto;
+  tracks: SpotifyTrackDto[];
 }

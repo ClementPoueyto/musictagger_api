@@ -1,10 +1,9 @@
-import { Expose } from "class-transformer";
-import { Column } from "typeorm";
+import { Expose } from 'class-transformer';
 
 export class SpotifyTrackInfoDto {
-    @Expose()
-    spotifyId : string;
+  @Expose()
+  spotifyId: string;
 
-    @Expose()
-    uri : string;
+  @Expose()
+  uri: string;
 }

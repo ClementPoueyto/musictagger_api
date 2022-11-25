@@ -1,9 +1,9 @@
-import { Expose } from "class-transformer";
+import { Expose } from 'class-transformer';
 
 export class SpotifyPlaylistDto {
-    @Expose()
-    spotifyId : string;
+  @Expose()
+  spotifyId: string;
 
-    @Expose()
-    spotifyPlaylistId : string;
+  @Expose()
+  spotifyPlaylistId: string;
 }

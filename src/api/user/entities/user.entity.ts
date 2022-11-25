@@ -1,22 +1,32 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BeforeInsert, BaseEntity, JoinColumn, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  BeforeInsert,
+  BaseEntity,
+  JoinColumn,
+  OneToOne,
+} from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { SpotifyUser } from 'src/api/authentication/spotify-auth/entities/spotify-user.entity';
+import { SpotifyUser } from 'api/authentication/spotify-auth/entities/spotify-user.entity';
 
 @Entity()
-export class User extends BaseEntity{
+export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   public id: string;
 
   @Column({ type: 'varchar', length: 120, unique: true })
   public email: string;
 
-  @Column({ type: 'varchar', length: 120, nullable : true })
+  @Column({ type: 'varchar', length: 120, nullable: true })
   public password?: string;
 
-  @Column({ type: 'varchar', length: 120, nullable : true })
+  @Column({ type: 'varchar', length: 120, nullable: true })
   public firstname?: string;
 
-  @Column({ type: 'varchar', length: 120, nullable : true })
+  @Column({ type: 'varchar', length: 120, nullable: true })
   public lastname?: string;
 
   /*
@@ -33,18 +43,15 @@ export class User extends BaseEntity{
   public isRegisteredWithGoogle: boolean;
 
   @JoinColumn()
-  @OneToOne(
-    () => SpotifyUser, spotifyUser => spotifyUser.user,
-    {
-      nullable: true, cascade: true
-
-    }
-  )
+  @OneToOne(() => SpotifyUser, (spotifyUser) => spotifyUser.user, {
+    nullable: true,
+    cascade: true,
+  })
   public spotifyUser?: SpotifyUser;
 
   @BeforeInsert()
   async hashPassword() {
-    if(!this.password) return
+    if (!this.password) return;
     this.password = await bcrypt.hash(this.password, 8);
   }
 
@@ -52,6 +59,9 @@ export class User extends BaseEntity{
   public lastLoginAt: Date;
 
   async validatePassword(password: string): Promise<boolean> {
-    return await bcrypt.compare(password, this.password);
+    if (this.password) {
+      return await bcrypt.compare(password, this.password);
+    }
+    return false;
   }
 }

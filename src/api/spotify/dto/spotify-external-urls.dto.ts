@@ -1,8 +1,6 @@
-import { Expose } from "class-transformer";
+import { Expose } from 'class-transformer';
 
 export class SpotifyExternalUrlsDto {
-
-  
-    @Expose()
-    spotify: string
-  }
+  @Expose()
+  spotify: string;
+}

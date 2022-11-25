@@ -11,6 +11,11 @@ import { TaggedTrackModule } from '../tagged-track/tagged-track.module';
   providers: [PlaylistService],
   controllers: [PlaylistController],
   exports: [PlaylistService],
-  imports : [ TypeOrmModule.forFeature([Playlist]), SpotifyModule, UserModule, forwardRef(()=>TaggedTrackModule)]
+  imports: [
+    TypeOrmModule.forFeature([Playlist]),
+    SpotifyModule,
+    UserModule,
+    forwardRef(() => TaggedTrackModule),
+  ],
 })
 export class PlaylistModule {}

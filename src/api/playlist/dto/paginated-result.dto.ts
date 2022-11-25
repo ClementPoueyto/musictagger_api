@@ -1,8 +1,8 @@
 export class PaginatedResultDto<T> {
-    data: T[];
-    metadata: {
-      total: number;
-      page: number;
-      limit : number;
-    };
-  }
+  data: T[];
+  metadata: {
+    total: number;
+    page: number;
+    limit: number;
+  };
+}

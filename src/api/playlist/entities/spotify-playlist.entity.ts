@@ -1,12 +1,12 @@
-import { Column } from "typeorm";
+import { Column } from 'typeorm';
 
 export class SpotifyPlaylist {
-    @Column()
-    spotifyUserId : string;
+  @Column()
+  spotifyUserId: string;
 
-    @Column()
-    spotifyUri : string;
+  @Column()
+  spotifyUri: string;
 
-    @Column()
-    spotifyPlaylistId : string;
+  @Column()
+  spotifyPlaylistId: string;
 }
