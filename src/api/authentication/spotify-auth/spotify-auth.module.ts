@@ -7,13 +7,11 @@ import { SpotifyOauthStrategy } from './strategies/spotify-oauth.strategy';
 import { SpotifyAuthController } from './spotify-auth.controller';
 import { ConfigService } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
-import { SharedModule } from 'shared/shared.module';
 
 @Module({
   imports: [
     PassportModule,
     HttpModule,
-    SharedModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

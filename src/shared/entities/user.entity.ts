@@ -10,7 +10,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { SpotifyUser } from 'shared/entities/spotify-user.entity';
+import { SpotifyUser } from './spotify-user.entity';
 
 @Entity()
 export class User extends BaseEntity {
@@ -43,7 +43,7 @@ export class User extends BaseEntity {
   public isRegisteredWithGoogle: boolean;
 
   @JoinColumn()
-  @OneToOne(() => SpotifyUser, (spotifyUser) => spotifyUser.user, {
+  @OneToOne(() => SpotifyUser, (spotifyUser: SpotifyUser) => spotifyUser.user, {
     nullable: true,
     cascade: true,
   })

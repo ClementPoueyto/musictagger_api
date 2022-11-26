@@ -50,7 +50,7 @@ export class UserController {
     if (id != req.user.id) {
       throw new UnauthorizedException();
     }
-    const user = await this.service.showById(id);
+    const user = await this.service.findById(id);
     return plainToInstance(UserDto, user);
   }
 

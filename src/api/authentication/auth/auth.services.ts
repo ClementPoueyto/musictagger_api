@@ -1,15 +1,10 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthLoginDto } from './dto/auth.dto';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'shared/entities/user.entity';
 import { JwtDto } from './dto/jwt.dto';
+import { User } from 'src/shared/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -40,11 +35,10 @@ export class AuthService {
 
   async validateUser(authLoginDto: AuthLoginDto): Promise<User> {
     const { email, password } = authLoginDto;
-    const user = await this.userRepository.findOne({
+    const user = await this.userRepository.findOneOrFail({
       where: { email: email },
       relations: { spotifyUser: true },
     });
-    if (!user) throw new NotFoundException();
     if (!(await user.validatePassword(password))) {
       throw new UnauthorizedException();
     }

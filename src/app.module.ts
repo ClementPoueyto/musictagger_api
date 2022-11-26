@@ -9,7 +9,8 @@ import { TaggedTrackModule } from './api/tagged-track/tagged-track.module';
 import { TrackModule } from './api/track/track.module';
 import { UserModule } from './api/user/user.module';
 import { getEnvPath } from './common/helper/env.helper';
-import { TypeOrmConfigService } from './shared/typeorm.service';
+import { SharedModule } from './shared/shared.module';
+import { TypeOrmConfigService } from './shared/services/typeorm.service';
 
 const envFilePath: string = getEnvPath(`${__dirname}/common/envs`);
 console.log(envFilePath);
@@ -18,7 +19,7 @@ console.log(envFilePath);
   imports: [
     ConfigModule.forRoot({ envFilePath: envFilePath, isGlobal: true }),
     TypeOrmModule.forRootAsync({ useClass: TypeOrmConfigService }),
-
+    SharedModule,
     AuthModule,
     UserModule,
     SpotifyAuthModule,

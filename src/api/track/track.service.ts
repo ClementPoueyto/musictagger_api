@@ -1,14 +1,14 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
 import { TrackDto } from './dto/track.dto';
 import { BadRequestException } from '@nestjs/common';
 import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
-import { Track } from 'shared/entities/track.entity';
-import { SpotifyService } from 'api/spotify/spotify.service';
-import { UserService } from 'api/user/user.services';
-import { TaggedTrack } from 'shared/entities/tagged-track.entity';
-import { SpotifyTrackDto } from 'api/spotify/dto/spotify-track.dto';
+import { SpotifyService } from '../spotify/spotify.service';
+import { UserService } from '../user/user.services';
+import { Track } from 'src/shared/entities/track.entity';
+import { TaggedTrack } from 'src/shared/entities/tagged-track.entity';
+import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
 
 @Injectable()
 export class TrackService {
@@ -19,11 +19,10 @@ export class TrackService {
   private readonly userService: UserService;
 
   async getTrackById(id: string, relation: boolean) {
-    const track = await Track.findOne({
+    const track = await Track.findOneOrFail({
       relations: { taggedTracks: relation },
       where: { id: id },
     });
-    if (!track) throw new NotFoundException('track not found with id : ' + id);
     return track;
   }
 
@@ -82,7 +81,7 @@ export class TrackService {
             },
           )
           .getOne()
-          .catch((err) => {
+          .catch((err: any) => {
             console.log(err);
           })
           .then((track: any) => {
@@ -146,7 +145,7 @@ export class TrackService {
     const track = new Track();
     track.artistName = trackDto.artists[0].name;
     track.albumTitle = trackDto.album.name;
-    track.artists = trackDto.artists.map((art) => art.name);
+    track.artists = trackDto.artists.map((art: any) => art.name);
     track.title = trackDto.name;
     track.image = trackDto.album.images[0].url;
     track.duration = trackDto.duration_ms;

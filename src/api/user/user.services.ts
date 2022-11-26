@@ -3,13 +3,13 @@ import {
   ConflictException,
   Inject,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
-import { SpotifyUserDto } from 'api/authentication/spotify-auth/dto/spotify-user.dto';
-import { SpotifyAuthService } from 'api/authentication/spotify-auth/spotify-auth.service';
-import { SpotifyUser } from 'shared/entities/spotify-user.entity';
-import { User } from 'shared/entities/user.entity';
+import { SpotifyUser } from 'src/shared/entities/spotify-user.entity';
+import { User } from 'src/shared/entities/user.entity';
+
 import { AuthService } from '../authentication/auth/auth.services';
+import { SpotifyUserDto } from '../authentication/spotify-auth/dto/spotify-user.dto';
+import { SpotifyAuthService } from '../authentication/spotify-auth/spotify-auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
@@ -33,23 +33,13 @@ export class UserService {
     return userCreated;
   }
 
-  async showById(userId: string): Promise<User> {
-    const user = await this.findById(userId);
-    if (!user) throw new NotFoundException();
-    return user;
-  }
-
-  async findById(id: string) {
-    const user = await User.findOne({
+  async findById(id: string): Promise<User> {
+    const user = await User.findOneOrFail({
       where: { id: id },
       relations: {
         spotifyUser: true,
       },
     });
-
-    if (!user) {
-      throw new Error('no user found with id :' + id);
-    }
     return user;
   }
 

@@ -9,11 +9,13 @@ import {
   Req,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'api/authentication/auth/guards/jwt-auth.guards';
-import { PaginatedResultDto } from 'api/tagged-track/dto/paginated-result.dto';
 import { plainToInstance } from 'class-transformer';
+import { NotFoundInterceptor } from 'src/shared/interceptors/not-found.interceptor';
+import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
+import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
 import { TrackDto } from './dto/track.dto';
 import { TrackService } from './track.service';
 
@@ -45,6 +47,7 @@ export class TrackController {
   }
 
   @ApiOkResponse({ description: 'get Track by Id', type: TrackDto })
+  @UseInterceptors(NotFoundInterceptor)
   @Get(':id')
   async getTrackById(
     @Param('id', ParseIntPipe) trackId: string,

@@ -1,4 +1,3 @@
-import { TaggedTrack } from 'shared/entities/tagged-track.entity';
 import {
   BaseEntity,
   Column,
@@ -8,6 +7,7 @@ import {
   Unique,
 } from 'typeorm';
 import { SpotifyTrack } from './spotify-track.entity';
+import { TaggedTrack } from './tagged-track.entity';
 
 @Entity()
 @Unique(['artistName', 'title', 'albumTitle'])

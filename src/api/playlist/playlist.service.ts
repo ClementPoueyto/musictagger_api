@@ -6,16 +6,16 @@ import {
   BadRequestException,
   forwardRef,
 } from '@nestjs/common';
+import { Playlist } from 'src/shared/entities/playlist.entity';
+import { SpotifyPlaylist } from 'src/shared/entities/spotify-playlist.entity';
+import { Track } from 'src/shared/entities/track.entity';
+import { SpotifyPaginationPlaylistsDto } from '../spotify/dto/spotify-pagination-playlists.dto';
+import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
+import { SpotifyService } from '../spotify/spotify.service';
+import { TaggedTrackService } from '../tagged-track/tagged-track.service';
+import { UserService } from '../user/user.services';
 import { CreateSpotifyPlaylistDto } from './dto/create-spotify-playlist.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
-import { Track } from 'shared/entities/track.entity';
-import { SpotifyPlaylist } from 'shared/entities/spotify-playlist.entity';
-import { Playlist } from 'shared/entities/playlist.entity';
-import { UserService } from 'api/user/user.services';
-import { TaggedTrackService } from 'api/tagged-track/tagged-track.service';
-import { SpotifyService } from 'api/spotify/spotify.service';
-import { SpotifyTrackDto } from 'api/spotify/dto/spotify-track.dto';
-import { SpotifyPaginationPlaylistsDto } from 'api/spotify/dto/spotify-pagination-playlists.dto';
 
 @Injectable()
 export class PlaylistService {
@@ -29,9 +29,9 @@ export class PlaylistService {
   private readonly taggedtrackService: TaggedTrackService;
 
   async getPlaylistById(userId: string, playlistId: string) {
-    const playlist = await Playlist.findOne({ where: { id: playlistId } });
-    if (!playlist)
-      throw new NotFoundException('no playlist found with id ' + playlistId);
+    const playlist = await Playlist.findOneOrFail({
+      where: { id: playlistId },
+    });
     if (playlist.userId != userId) throw new UnauthorizedException();
     return playlist;
   }
@@ -80,7 +80,6 @@ export class PlaylistService {
     tags: string[],
   ) {
     const user = await this.userService.findById(userId);
-    if (!user) throw new NotFoundException('user not found with id ' + userId);
     const spotifyId = user.spotifyUser?.spotifyId;
     createPlaylistBody.description =
       createPlaylistBody.description + ' | TAGS : ' + tags;
@@ -133,7 +132,6 @@ export class PlaylistService {
     createPlaylistBody: CreateSpotifyPlaylistDto,
   ) {
     const user = await this.userService.findById(userId);
-    if (!user) throw new NotFoundException('user not found with id ' + userId);
     const spotifyId = user.spotifyUser?.spotifyId;
     if (!spotifyId) throw new Error('no spotify Id');
     const existingPlaylist = await this.getPlaylistByTags(userId, tags);
@@ -176,16 +174,13 @@ export class PlaylistService {
     updatePlaylistBody: CreateSpotifyPlaylistDto,
   ) {
     const user = await this.userService.findById(userId);
-    if (!user) throw new NotFoundException('user not found with id ' + userId);
-    if (user && !user.spotifyUser)
+    if (user && !user.spotifyUser) {
       throw new NotFoundException('no spotify user');
+    }
     const spotifyId = user.spotifyUser?.spotifyId;
     if (!spotifyId) throw new Error('no spotify Id');
 
     const playlist = await this.getPlaylistById(userId, playlistId);
-    if (!playlist) {
-      throw new NotFoundException('playlist not found with id : ' + playlistId);
-    }
 
     const copyTags = [...tags];
     const copyOldTags = [...playlist.tags];
@@ -231,9 +226,7 @@ export class PlaylistService {
     tags: string[],
   ) {
     const user = await this.userService.findById(userId);
-    if (!user) throw new NotFoundException('user not found with id ' + userId);
-    if (user && !user.spotifyUser)
-      throw new NotFoundException('no spotify user');
+    if (!user.spotifyUser) throw new NotFoundException('no spotify user');
     const spotifyId = user.spotifyUser?.spotifyId;
     if (!spotifyId) throw new Error('no spotify Id');
 

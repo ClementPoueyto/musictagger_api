@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TrackDto } from 'api/track/dto/track.dto';
 import { Expose, Type } from 'class-transformer';
+import { TrackDto } from 'src/api/track/dto/track.dto';
 
 export class TaggedTrackDto {
   @ApiProperty()

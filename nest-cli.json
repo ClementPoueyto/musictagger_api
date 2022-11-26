@@ -3,10 +3,6 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "assets": ["common/envs/*"],
-    "experimentalDecorators": true, 
-    "emitDecoratorMetadata": true,
-    "forceConsistentCasingInFileNames": true 
-
+    "assets": ["common/envs/*"]
   }
 }

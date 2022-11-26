@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { TrackDto } from 'api/track/dto/track.dto';
+import { TrackDto } from 'src/api/track/dto/track.dto';
 import { SpotifyPlaylistDto } from './spotify-playlist.dto';
 
 export class PlaylistDto {
