@@ -16,13 +16,10 @@ export class AuthHelper {
 
   // Get User by User ID we get from decode()
   public async validateUser(decoded: any): Promise<User> {
-    const user = await User.findOne({
+    const user = await User.findOneOrFail({
       where: { id: decoded.userId },
       relations: { spotifyUser: true },
     });
-    if (!user) {
-      throw new Error('no user');
-    }
     return user;
   }
 

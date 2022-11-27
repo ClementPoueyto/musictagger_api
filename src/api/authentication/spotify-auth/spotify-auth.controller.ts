@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Get,
   Inject,
@@ -12,6 +11,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { Profile } from 'passport-spotify';
+import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guards';
 import { SpotifyAccessTokenDto } from './dto/spotify-access-token.dto';
 import { SpotifyUserDto } from './dto/spotify-user.dto';
@@ -37,7 +37,7 @@ export class SpotifyAuthController {
     @Query('refresh-token') refresh_token: string,
   ): Promise<SpotifyAccessTokenDto> {
     if (!req.user?.spotifyUser?.spotifyId)
-      throw new BadRequestException('No spotify account registered');
+      throw new SpotifyUserRequiredException();
     return await this.spotifyAuthService.refresh_access_token(
       refresh_token,
       req.user.spotifyUser.spotifyId,

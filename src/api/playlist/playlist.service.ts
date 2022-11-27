@@ -9,6 +9,7 @@ import {
 import { Playlist } from 'src/shared/entities/playlist.entity';
 import { SpotifyPlaylist } from 'src/shared/entities/spotify-playlist.entity';
 import { Track } from 'src/shared/entities/track.entity';
+import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
 import { SpotifyPaginationPlaylistsDto } from '../spotify/dto/spotify-pagination-playlists.dto';
 import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
 import { SpotifyService } from '../spotify/spotify.service';
@@ -85,8 +86,7 @@ export class PlaylistService {
       createPlaylistBody.description + ' | TAGS : ' + tags;
     createPlaylistBody.name = createPlaylistBody.name + ' | MUSICTAG';
 
-    if (!spotifyId)
-      throw new BadRequestException('no spotify user found for this user');
+    if (!spotifyId) throw new SpotifyUserRequiredException();
     const createdPlaylist = await this.spotifyService.createPlaylist(
       spotifyId,
       createPlaylistBody,
@@ -108,10 +108,7 @@ export class PlaylistService {
       .andWhere('tags <@ :tags', { tags: tags })
       .andWhere('array_length(tags,1) = :size', { size: tags.length });
 
-    const res = await playlistBuilder.getOne();
-    if (!res) {
-      throw new Error('no playlist with tags ' + tags);
-    }
+    const res = await playlistBuilder.getOneOrFail();
     return res;
   }
 
@@ -133,7 +130,7 @@ export class PlaylistService {
   ) {
     const user = await this.userService.findById(userId);
     const spotifyId = user.spotifyUser?.spotifyId;
-    if (!spotifyId) throw new Error('no spotify Id');
+    if (!spotifyId) throw new SpotifyUserRequiredException();
     const existingPlaylist = await this.getPlaylistByTags(userId, tags);
     let playlist;
     if (existingPlaylist) {
@@ -174,12 +171,10 @@ export class PlaylistService {
     updatePlaylistBody: CreateSpotifyPlaylistDto,
   ) {
     const user = await this.userService.findById(userId);
-    if (user && !user.spotifyUser) {
-      throw new NotFoundException('no spotify user');
+    if (!user.spotifyUser) {
+      throw new SpotifyUserRequiredException();
     }
-    const spotifyId = user.spotifyUser?.spotifyId;
-    if (!spotifyId) throw new Error('no spotify Id');
-
+    const spotifyId = user.spotifyUser.spotifyId;
     const playlist = await this.getPlaylistById(userId, playlistId);
 
     const copyTags = [...tags];
@@ -226,10 +221,8 @@ export class PlaylistService {
     tags: string[],
   ) {
     const user = await this.userService.findById(userId);
-    if (!user.spotifyUser) throw new NotFoundException('no spotify user');
+    if (!user.spotifyUser) throw new SpotifyUserRequiredException();
     const spotifyId = user.spotifyUser?.spotifyId;
-    if (!spotifyId) throw new Error('no spotify Id');
-
     const tracks = await this.taggedtrackService.getTaggedTracks(
       userId,
       0,

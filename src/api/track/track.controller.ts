@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
+import { UserIdRequiredException } from 'src/shared/errors/user-id-required.error';
 import { NotFoundInterceptor } from 'src/shared/interceptors/not-found.interceptor';
 import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
 import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
@@ -31,6 +32,7 @@ export class TrackController {
     description: 'get liked Track by user id',
     type: Promise<PaginatedResultDto<TrackDto>>,
   })
+  @UseInterceptors(NotFoundInterceptor)
   @Get('like')
   async getLikeTrack(
     @Req() req: any,
@@ -38,7 +40,7 @@ export class TrackController {
     @Query('page') page: number,
     @Query('size') size: number,
   ): Promise<PaginatedResultDto<TrackDto>> {
-    if (!userId) throw new BadRequestException('user id missing');
+    if (!userId) throw new UserIdRequiredException();
     if (userId != req.user.id) {
       throw new UnauthorizedException();
     }
@@ -60,6 +62,7 @@ export class TrackController {
   }
 
   @ApiOkResponse({ description: 'get Tracks details', type: Array<TrackDto> })
+  @UseInterceptors(NotFoundInterceptor)
   @Get('')
   async getTracksDetails(): Promise<TrackDto[]> {
     return await plainToInstance(

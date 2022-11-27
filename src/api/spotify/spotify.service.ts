@@ -1,5 +1,5 @@
 import { HttpService } from '@nestjs/axios';
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { SpotifyAuthService } from '../authentication/spotify-auth/spotify-auth.service';
 import { SpotifyPlaylistDetailsDto } from './dto/spotify-playlist-details.dto';
@@ -16,7 +16,10 @@ export class SpotifyService {
   private readonly spotifyAuthService: SpotifyAuthService;
 
   constructor(private httpService: HttpService) {}
-  private getHeaders(accessToken: string) {
+
+  private async getHeaders(spotifyId: string) {
+    const accessToken = await this.spotifyAuthService.getAccessToken(spotifyId);
+    console.log(accessToken);
     return {
       Accept: 'application/json',
       Authorization: 'Bearer ' + accessToken,
@@ -27,167 +30,104 @@ export class SpotifyService {
   async getLikedTracks(spotifyId: string, limit = 50, page = 0) {
     if (!page) page = 0;
     if (!limit || limit > 50) limit = 50;
-
-    const token = await this.spotifyAuthService.getAccessToken(spotifyId);
-
-    const res = await this.httpService.axiosRef
-      .get(
-        this.SPOTIFY_URL +
-          'me/tracks?limit=' +
-          limit +
-          '&offset=' +
-          page * limit,
-        { headers: this.getHeaders(token) },
-      )
-      .catch((e) => {
-        console.log(e.message);
-        if (e.response.status == HttpStatus.UNAUTHORIZED) {
-          console.log(e);
-        }
-      });
-    if (res && res.status == HttpStatus.OK) {
-      return plainToInstance(SpotifyPaginationTracksDto, res.data, {
-        excludeExtraneousValues: true,
-      });
-    }
-    throw new Error();
+    console.log('test');
+    const res = await this.httpService.axiosRef.get(
+      this.SPOTIFY_URL + 'me/tracks?limit=' + limit + '&offset=' + page * limit,
+      { headers: await this.getHeaders(spotifyId) },
+    );
+    return plainToInstance(SpotifyPaginationTracksDto, res.data, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async createPlaylist(spotifyId: string, body: SpotifyPlaylistDetailsDto) {
-    const token = await this.spotifyAuthService.getAccessToken(spotifyId);
-    const res = await this.httpService.axiosRef
-      .post(this.SPOTIFY_URL + 'users/' + spotifyId + '/playlists', body, {
-        headers: this.getHeaders(token),
-      })
-      .catch((e) => {
-        if (e.response.status == HttpStatus.UNAUTHORIZED) {
-          console.log(e);
-        }
-      });
-    if (res && res.status == HttpStatus.CREATED) {
-      return plainToInstance(SpotifyPaginationPlaylistsDto, res.data, {
-        excludeExtraneousValues: true,
-      });
-    }
-    throw new Error();
+    const res = await this.httpService.axiosRef.post(
+      this.SPOTIFY_URL + 'users/' + spotifyId + '/playlists',
+      body,
+      {
+        headers: await this.getHeaders(spotifyId),
+      },
+    );
+
+    return plainToInstance(SpotifyPaginationPlaylistsDto, res.data, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async addItemsPlaylist(
-    spotifyUserId: string,
+    spotifyId: string,
     tracksURI: string[],
     playlistId: string,
   ) {
-    const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
-    const res = await this.httpService.axiosRef
-      .post(
-        this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
-        { uris: tracksURI, position: 0 },
-        { headers: this.getHeaders(token) },
-      )
-      .catch((e) => {
-        if (e.response.status == HttpStatus.UNAUTHORIZED) {
-          console.log(e);
-        }
-      });
-    if (res && res.status == HttpStatus.CREATED) {
-    }
+    await this.httpService.axiosRef.post(
+      this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
+      { uris: tracksURI, position: 0 },
+      { headers: await this.getHeaders(spotifyId) },
+    );
   }
 
   async updateItemsPlaylist(
-    spotifyUserId: string,
+    spotifyId: string,
     tracksURI: string[],
     playlistId: string,
   ) {
-    const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
-    const res = await this.httpService.axiosRef
-      .put(
-        this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
-        { uris: tracksURI },
-        { headers: this.getHeaders(token) },
-      )
-      .catch((e) => {
-        console.log(e);
-        if (e.response.status == HttpStatus.UNAUTHORIZED) {
-          console.log(e);
-        }
-      });
-    if (res && res.status == HttpStatus.CREATED) {
-    }
+    await this.httpService.axiosRef.put(
+      this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
+      { uris: tracksURI },
+      { headers: await this.getHeaders(spotifyId) },
+    );
   }
 
   async updateDetailsPlaylist(
-    spotifyUserId: string,
+    spotifyId: string,
     spotifyPlaylistDetail: SpotifyPlaylistDetailsDto,
     playlistId: string,
   ) {
-    const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
-    const res = await this.httpService.axiosRef
-      .put(
-        this.SPOTIFY_URL + 'playlists/' + playlistId,
-        spotifyPlaylistDetail,
-        { headers: this.getHeaders(token) },
-      )
-      .catch((e) => {
-        console.log(e);
-
-        if (e.response.status == HttpStatus.UNAUTHORIZED) {
-          console.log(e);
-        }
-      });
-    if (res && res.status == HttpStatus.OK) {
-    }
+    await this.httpService.axiosRef.put(
+      this.SPOTIFY_URL + 'playlists/' + playlistId,
+      spotifyPlaylistDetail,
+      { headers: await this.getHeaders(spotifyId) },
+    );
   }
 
   async getPlaylistTracks(
-    spotifyUserId: string,
+    spotifyId: string,
     playlistId: string,
     limit = 50,
     offset = 0,
   ) {
-    const token = await this.spotifyAuthService.getAccessToken(spotifyUserId);
-    const res = await this.httpService.axiosRef
-      .get(
-        this.SPOTIFY_URL +
-          'playlists/' +
-          playlistId +
-          '/tracks?limit=' +
-          limit +
-          '&offset=' +
-          offset * limit,
-        { headers: this.getHeaders(token) },
-      )
-      .catch((e) => {
-        if (e.response.status == HttpStatus.UNAUTHORIZED) {
-          console.log(e);
-        }
-      });
-    if (res && res.status == HttpStatus.OK) {
-      return plainToInstance(SpotifyPaginationTracksDto, res.data, {
-        excludeExtraneousValues: true,
-      });
-    }
-    throw new Error();
+    const res = await this.httpService.axiosRef.get(
+      this.SPOTIFY_URL +
+        'playlists/' +
+        playlistId +
+        '/tracks?limit=' +
+        limit +
+        '&offset=' +
+        offset * limit,
+      { headers: await this.getHeaders(spotifyId) },
+    );
+
+    return plainToInstance(SpotifyPaginationTracksDto, res.data, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async getTracksById(ids: string[]): Promise<SpotifySeveralTracksDto> {
     const token = await this.spotifyAuthService.getAppAccessToken();
-    console.log(token);
-    if (!token) throw ApiInternalServerErrorResponse();
-    const res = await this.httpService.axiosRef
-      .get(this.SPOTIFY_URL + 'tracks?ids=' + ids.join(','), {
-        headers: this.getHeaders(token),
-      })
-      .catch((e) => {
-        if (e.response.status == HttpStatus.UNAUTHORIZED) {
-          console.log(e);
-        }
-      });
-    if (res && res.status == HttpStatus.OK) {
-      console.log(res.data.tracks[0]);
-      return plainToInstance(SpotifySeveralTracksDto, res.data, {
-        excludeExtraneousValues: true,
-      });
-    }
-    throw new Error();
+    if (!token) throw Error('token app not found');
+    const res = await this.httpService.axiosRef.get(
+      this.SPOTIFY_URL + 'tracks?ids=' + ids.join(','),
+      {
+        headers: {
+          Accept: 'application/json',
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    return plainToInstance(SpotifySeveralTracksDto, res.data, {
+      excludeExtraneousValues: true,
+    });
   }
 }

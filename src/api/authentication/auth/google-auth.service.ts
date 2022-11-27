@@ -1,5 +1,6 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { User } from 'src/shared/entities/user.entity';
+import { GoogleUserRequiredException } from 'src/shared/errors/google-user-required.error copy';
 import { AuthService } from './auth.services';
 import { GoolgleAuthDto } from './dto/google-auth.dto';
 
@@ -10,13 +11,13 @@ export class GoogleAuthenticationService {
   async googleLogin(req: { user: GoolgleAuthDto }) {
     const googleUser: GoolgleAuthDto = req.user;
     if (!googleUser) {
-      return 'No user from google';
+      throw new GoogleUserRequiredException();
     }
     let user = await User.findOne({
       where: { email: googleUser.email },
     });
     if (user && !user.isRegisteredWithGoogle) {
-      throw new UnauthorizedException('Account is not logged with Google');
+      throw new GoogleUserRequiredException();
     }
     if (!user) {
       user = new User();

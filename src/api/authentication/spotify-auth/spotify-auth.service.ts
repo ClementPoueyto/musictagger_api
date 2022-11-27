@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SpotifyUser } from 'src/shared/entities/spotify-user.entity';
+import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
 import { SpotifyAccessTokenDto } from './dto/spotify-access-token.dto';
 import { SpotifyUserDto } from './dto/spotify-user.dto';
 
@@ -24,7 +25,7 @@ export class SpotifyAuthService {
   async updateSpotifyUser(spotifyUserDto: SpotifyUserDto) {
     const spotifyUser = await this.findById(spotifyUserDto.spotifyId);
     if (!spotifyUser) {
-      throw new Error('no spotify user');
+      throw new SpotifyUserRequiredException();
     }
     spotifyUser.spotifyAccessToken = spotifyUserDto.spotifyAccessToken;
     spotifyUser.spotifyRefreshToken = spotifyUserDto.spotifyRefreshToken;
@@ -72,8 +73,6 @@ export class SpotifyAuthService {
 
   async getAccessToken(spotifyId: string): Promise<string> {
     const spotifyUser = await this.findById(spotifyId);
-    if (!spotifyUser.spotifyAccessToken)
-      throw new BadRequestException('no spotify access token');
     const tokenDate = spotifyUser.tokenCreation;
     tokenDate.setSeconds(
       spotifyUser.tokenCreation.getSeconds() + spotifyUser.expiresIn,

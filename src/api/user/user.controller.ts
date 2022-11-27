@@ -11,6 +11,7 @@ import {
   Request,
   UnauthorizedException,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -22,6 +23,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
+import { NotFoundInterceptor } from 'src/shared/interceptors/not-found.interceptor';
 import { JwtDto } from '../authentication/auth/dto/jwt.dto';
 import { JwtAuthGuard } from '../authentication/auth/guards/jwt-auth.guards';
 import { SpotifyUserDto } from '../authentication/spotify-auth/dto/spotify-user.dto';
@@ -42,6 +44,7 @@ export class UserController {
     type: UserDto,
   })
   @ApiUnauthorizedResponse({ description: 'Invalid Authorization header' })
+  @UseInterceptors(NotFoundInterceptor)
   @ApiNotFoundResponse({ description: 'User not found' })
   public async getUser(
     @Request() req: any,
@@ -57,6 +60,7 @@ export class UserController {
   @Post()
   @ApiOkResponse({ description: 'Create and Return the user', type: UserDto })
   @ApiBadRequestResponse()
+  @UseInterceptors(NotFoundInterceptor)
   @ApiConflictResponse({ description: 'Login already exist' })
   public async createUser(@Body() body: CreateUserDto): Promise<UserDto> {
     const user = await this.service.create(body);
@@ -67,6 +71,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiUnauthorizedResponse()
   @ApiBearerAuth()
+  @UseInterceptors(NotFoundInterceptor)
   @ApiOkResponse({ description: 'login Spotify Account to user' })
   public async loginSpotifyUser(
     @Request() req: any,
@@ -89,6 +94,7 @@ export class UserController {
   @Delete(':id/spotify')
   @UseGuards(JwtAuthGuard)
   @ApiUnauthorizedResponse()
+  @UseInterceptors(NotFoundInterceptor)
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'logout Spotify Account to user' })
   public async logoutSpotifyUser(

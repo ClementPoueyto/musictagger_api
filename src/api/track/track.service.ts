@@ -9,6 +9,7 @@ import { UserService } from '../user/user.services';
 import { Track } from 'src/shared/entities/track.entity';
 import { TaggedTrack } from 'src/shared/entities/tagged-track.entity';
 import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
+import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
 
 @Injectable()
 export class TrackService {
@@ -33,7 +34,7 @@ export class TrackService {
   ): Promise<PaginatedResultDto<TrackDto>> {
     const user = await this.userService.findById(userId);
     if (!user || !user.spotifyUser?.spotifyId)
-      throw new BadRequestException('No spotify account registered');
+      throw new SpotifyUserRequiredException();
     const spotifyId = user.spotifyUser.spotifyId;
     const spotifyLikedTracks = await this.spotifyService.getLikedTracks(
       spotifyId,
@@ -123,8 +124,9 @@ export class TrackService {
         spotifyTracks = spotifyTracks.concat(currentSpotifyTracks.tracks);
       }
     }
+    console.log(spotifyTracks);
     spotifyTracks.forEach(async (element) => {
-      const t = await Track.findOne({
+      const t = await Track.findOneOrFail({
         where: {
           title: element.name,
           artistName: element.artists[0].name,
