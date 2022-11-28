@@ -1,7 +1,6 @@
 import {
   Inject,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
   BadRequestException,
   forwardRef,
@@ -108,8 +107,7 @@ export class PlaylistService {
       .andWhere('tags <@ :tags', { tags: tags })
       .andWhere('array_length(tags,1) = :size', { size: tags.length });
 
-    const res = await playlistBuilder.getOneOrFail();
-    return res;
+    return await playlistBuilder.getOneOrFail();
   }
 
   async getPlaylistsContainingTags(
@@ -131,8 +129,11 @@ export class PlaylistService {
     const user = await this.userService.findById(userId);
     const spotifyId = user.spotifyUser?.spotifyId;
     if (!spotifyId) throw new SpotifyUserRequiredException();
-    const existingPlaylist = await this.getPlaylistByTags(userId, tags);
+    let existingPlaylist;
     let playlist;
+    try {
+      existingPlaylist = await this.getPlaylistByTags(userId, tags);
+    } catch (e) {}
     if (existingPlaylist) {
       throw new BadRequestException(
         'playlist with tags : ' + tags + ' already existing',
@@ -187,7 +188,10 @@ export class PlaylistService {
         return !tags.includes(element);
       }).length > 0;
     if (isNewTags) {
-      const existingPlaylist = await this.getPlaylistByTags(userId, tags);
+      let existingPlaylist;
+      try {
+        existingPlaylist = await this.getPlaylistByTags(userId, tags);
+      } catch (e) {}
       if (existingPlaylist) {
         throw new BadRequestException(
           'playlist with tags : ' + tags + ' already existing',

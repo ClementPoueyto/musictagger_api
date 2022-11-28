@@ -6,7 +6,6 @@ import { SpotifyPlaylistDetailsDto } from './dto/spotify-playlist-details.dto';
 import { SpotifyPaginationPlaylistsDto } from './dto/spotify-pagination-playlists.dto';
 import { SpotifyPaginationTracksDto } from './dto/spotify-pagination-tracks.dto';
 import { SpotifySeveralTracksDto } from './dto/spotify-several-tracks.dto';
-import { ApiInternalServerErrorResponse } from '@nestjs/swagger';
 
 @Injectable()
 export class SpotifyService {
@@ -19,7 +18,6 @@ export class SpotifyService {
 
   private async getHeaders(spotifyId: string) {
     const accessToken = await this.spotifyAuthService.getAccessToken(spotifyId);
-    console.log(accessToken);
     return {
       Accept: 'application/json',
       Authorization: 'Bearer ' + accessToken,
@@ -30,7 +28,6 @@ export class SpotifyService {
   async getLikedTracks(spotifyId: string, limit = 50, page = 0) {
     if (!page) page = 0;
     if (!limit || limit > 50) limit = 50;
-    console.log('test');
     const res = await this.httpService.axiosRef.get(
       this.SPOTIFY_URL + 'me/tracks?limit=' + limit + '&offset=' + page * limit,
       { headers: await this.getHeaders(spotifyId) },
