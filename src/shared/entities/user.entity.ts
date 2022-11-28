@@ -47,7 +47,7 @@ export class User extends BaseEntity {
     nullable: true,
     cascade: true,
   })
-  public spotifyUser?: SpotifyUser;
+  public spotifyUser?: SpotifyUser | null;
 
   @BeforeInsert()
   async hashPassword() {

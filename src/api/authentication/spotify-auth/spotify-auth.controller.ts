@@ -73,7 +73,6 @@ export class SpotifyAuthController {
           expires_in: number;
         };
       } = req;
-      console.log(authInfo);
       const authInfoDto: SpotifyUserDto = {
         spotifyId: user.id,
 

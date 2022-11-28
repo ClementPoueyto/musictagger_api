@@ -75,7 +75,6 @@ export class UserService {
         //déconnecte l'ancien utilisateur
         await this.logoutSpotifyAccount((await existingSpotifyAccount.user).id);
       }
-
       //met à jour si Id identique; crée sinon
       const spotifyUserEntity = new SpotifyUser();
       spotifyUserEntity.spotifyId = spotifyUser.spotifyId;
@@ -85,7 +84,6 @@ export class UserService {
       spotifyUserEntity.expiresIn = spotifyUser.expiresIn;
       user.spotifyUser = spotifyUserEntity;
       await User.save(user);
-
       return await this.authService.refreshJwtToken(user.id);
     } catch (err) {
       throw new BadRequestException(err);
@@ -94,9 +92,8 @@ export class UserService {
 
   async logoutSpotifyAccount(userId: string) {
     const user = await this.findById(userId);
-    user.spotifyUser = undefined;
-    User.save(user);
-
+    user.spotifyUser = null;
+    await User.save(user);
     return this.authService.refreshJwtToken(user.id);
   }
 }
