@@ -1,5 +1,5 @@
 import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { SpotifyPlaylist } from './spotify-playlist.entity';
+import { SpotifyPlaylist } from './spotify/spotify-playlist.entity';
 
 @Entity()
 export class Playlist extends BaseEntity {

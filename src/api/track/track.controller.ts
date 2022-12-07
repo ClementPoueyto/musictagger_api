@@ -5,6 +5,7 @@ import {
   Inject,
   Param,
   ParseIntPipe,
+  Put,
   Query,
   Req,
   UnauthorizedException,
@@ -57,17 +58,16 @@ export class TrackController {
     if (!trackId) throw new BadRequestException('track id missing');
     return await plainToInstance(
       TrackDto,
-      this.trackService.getTrackById(trackId, true),
+      this.trackService.getTrackById(trackId, true, true),
     );
   }
 
-  @ApiOkResponse({ description: 'get Tracks details', type: Array<TrackDto> })
+  @ApiOkResponse({
+    description: 'update Tracks details',
+  })
   @UseInterceptors(NotFoundInterceptor)
-  @Get('')
-  async getTracksDetails(): Promise<TrackDto[]> {
-    return await plainToInstance(
-      Array<TrackDto>,
-      this.trackService.getDetailsTracks(),
-    );
+  @Put('')
+  async getTracksDetails(): Promise<void> {
+    return this.trackService.updateDetailsTracks();
   }
 }

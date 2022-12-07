@@ -6,10 +6,14 @@ import { SpotifyPlaylistDetailsDto } from './dto/spotify-playlist-details.dto';
 import { SpotifyPaginationPlaylistsDto } from './dto/spotify-pagination-playlists.dto';
 import { SpotifyPaginationTracksDto } from './dto/spotify-pagination-tracks.dto';
 import { SpotifySeveralTracksDto } from './dto/spotify-several-tracks.dto';
+import { SpotifyArtistDto } from './dto/spotify-artist.dto';
+import { SpotifyTrackDto } from './dto/spotify-track.dto';
 
 @Injectable()
 export class SpotifyService {
   private SPOTIFY_URL = 'https://api.spotify.com/v1/';
+
+  private MAX_SIZE_ARRAY = 50;
 
   @Inject()
   private readonly spotifyAuthService: SpotifyAuthService;
@@ -126,5 +130,33 @@ export class SpotifyService {
     return plainToInstance(SpotifySeveralTracksDto, res.data, {
       excludeExtraneousValues: true,
     });
+  }
+
+  async getArtistsByIds(ids: string[]) {
+    let index = 0;
+    let artists: SpotifyArtistDto[] = [];
+    const token = await this.spotifyAuthService.getAppAccessToken();
+    if (!token) throw Error('token app not found');
+    while (index < ids.length) {
+      const res = await this.httpService.axiosRef.get(
+        this.SPOTIFY_URL +
+          'artists?ids=' +
+          ids.slice(index, index + this.MAX_SIZE_ARRAY).join(','),
+        {
+          headers: {
+            Accept: 'application/json',
+            Authorization: 'Bearer ' + token,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      index += artists.length;
+      artists = artists.concat(
+        plainToInstance(SpotifyArtistDto, res.data.artists, {
+          excludeExtraneousValues: true,
+        }),
+      );
+    }
+    return artists;
   }
 }

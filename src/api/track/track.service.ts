@@ -10,6 +10,10 @@ import { Track } from 'src/shared/entities/track.entity';
 import { TaggedTrack } from 'src/shared/entities/tagged-track.entity';
 import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
 import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
+import { SpotifyArtistDto } from '../spotify/dto/spotify-artist.dto';
+import { Artist } from 'src/shared/entities/artist.entity';
+import { SpotifyArtist } from 'src/shared/entities/spotify/spotify-artist.entity';
+import { In } from 'typeorm';
 
 @Injectable()
 export class TrackService {
@@ -19,9 +23,9 @@ export class TrackService {
   @Inject()
   private readonly userService: UserService;
 
-  async getTrackById(id: string, relation: boolean) {
+  async getTrackById(id: string, taggedtracks: boolean, artists: boolean) {
     const track = await Track.findOneOrFail({
-      relations: { taggedTracks: relation },
+      relations: { taggedTracks: taggedtracks, artists: artists },
       where: { id: id },
     });
     return track;
@@ -45,7 +49,6 @@ export class TrackService {
       const spotifyLikedTracksEntities = spotifyLikedTracks.items.map((item) =>
         this.dtoToEntitySpotifyTrackMapping(item.track),
       );
-
       for (const trackEntity of spotifyLikedTracksEntities) {
         try {
           const currTrack = await Track.findOne({
@@ -58,8 +61,10 @@ export class TrackService {
           if (currTrack) {
             trackEntity.id = currTrack.id;
           }
-          await Track.save(trackEntity);
-        } catch (err) {}
+          await this.saveTrack(trackEntity);
+        } catch (err) {
+          console.log(err);
+        }
       }
 
       const res: any[] = [];
@@ -108,46 +113,99 @@ export class TrackService {
     return { data: [] };
   }
 
-  async getDetailsTracks() {
-    const MAX_SIZE_ARRAY = 50;
-    const currentTracks: Track[] = await Track.find();
-    const ids = currentTracks.map((t) => t.spotifyTrack.spotifyId);
-    const numberRequest = ids.length / MAX_SIZE_ARRAY;
-    let spotifyTracks: SpotifyTrackDto[] = [];
-    for (let n = 0; n < numberRequest; n++) {
-      const currIds = ids.slice(n * MAX_SIZE_ARRAY, (n + 1) * MAX_SIZE_ARRAY);
-      const currentSpotifyTracks = await this.spotifyService.getTracksById(
-        currIds,
-      );
-
-      if (currentSpotifyTracks && currentSpotifyTracks.tracks) {
-        spotifyTracks = spotifyTracks.concat(currentSpotifyTracks.tracks);
-      }
+  updateDetailsTracks(trackIds?: string[]): Promise<void> {
+    let request: Promise<Track[]>;
+    if (trackIds && trackIds.length > 0) {
+      request = Track.find({
+        where: { id: In(trackIds) },
+        relations: { taggedTracks: false, artists: true },
+      });
+    } else {
+      request = Track.find({
+        relations: { taggedTracks: false, artists: true },
+      });
     }
-    console.log(spotifyTracks);
-    spotifyTracks.forEach(async (element) => {
-      const t = await Track.findOneOrFail({
+    return request.then((tracks) => {
+      const artistIds = new Set(
+        tracks
+          .flatMap((t) => t.artists)
+          .filter((f) => f != null)
+          .map((a) => a.spotifyArtist.spotifyArtistId),
+      );
+      return this.spotifyService
+        .getArtistsByIds(Array.from(artistIds.values()))
+        .then((spotifyArtists) => {
+          const artists = spotifyArtists
+            .map((a) => this.dtoToEntitySpotifyArtistMapping(a))
+            .filter((a) => a != null && a.spotifyArtist != null);
+
+          artists.forEach((artist) => {
+            return Artist.findOne({
+              where: {
+                spotifyArtist: {
+                  spotifyArtistId: artist.spotifyArtist.spotifyArtistId,
+                },
+              },
+              relations: { tracks: true },
+            }).then((art) => {
+              if (art) {
+                art.genres = artist.genres;
+                art.popularity = artist.popularity;
+                for (const track of art.tracks) {
+                  this.getTrackById(track.id, false, false).then((track) => {
+                    if (art.genres) {
+                      track.genres = art.genres;
+                    }
+                    Track.update(track.id, track);
+                  });
+                }
+                return Artist.save(art);
+              }
+            });
+          });
+        });
+    });
+  }
+
+  getTrackArtistsById(spotifyArtistIds: string[]): Promise<Artist[]> {
+    return this.spotifyService
+      .getArtistsByIds(spotifyArtistIds)
+      .then((artistsSpotify: SpotifyArtistDto[]) => {
+        const artists = artistsSpotify.map((a) =>
+          this.dtoToEntitySpotifyArtistMapping(a),
+        );
+        return Artist.create(artists);
+      });
+  }
+
+  private async saveTrack(track: Track) {
+    const artists: Artist[] = [];
+    for (const artist of track.artists) {
+      const existingArtist = await Artist.findOne({
         where: {
-          title: element.name,
-          artistName: element.artists[0].name,
-          albumTitle: element.album.name,
+          spotifyArtist: {
+            spotifyArtistId: artist.spotifyArtist.spotifyArtistId,
+          },
         },
       });
-      if (t) {
-        t.popularity = element.popularity;
-        t.genres = element.artists[0].genres;
-        t.save();
+      if (!existingArtist) {
+        const newArtist = await Artist.save(artist);
+        artists.push(newArtist);
+      } else {
+        artists.push(existingArtist);
       }
-    });
-    //console.log(spotifyTracks.map(el=> el.artists[0]))
-    return spotifyTracks.map((el) => this.dtoToEntitySpotifyTrackMapping(el));
+    }
+    track.artists = artists;
+    return await Track.save(track);
   }
 
   private dtoToEntitySpotifyTrackMapping(trackDto: SpotifyTrackDto): Track {
     const track = new Track();
+    track.artists = trackDto.artists.map((a) =>
+      this.dtoToEntitySpotifyArtistMapping(a),
+    );
     track.artistName = trackDto.artists[0].name;
     track.albumTitle = trackDto.album.name;
-    track.artists = trackDto.artists.map((art: any) => art.name);
     track.title = trackDto.name;
     track.image = trackDto.album.images[0].url;
     track.duration = trackDto.duration_ms;
@@ -157,5 +215,18 @@ export class TrackService {
     track.genres = trackDto.artists[0].genres;
     track.duration = trackDto.duration_ms;
     return track;
+  }
+
+  private dtoToEntitySpotifyArtistMapping(artistDto: SpotifyArtistDto): Artist {
+    const artist = new Artist();
+    const spotifyArtist = new SpotifyArtist();
+    artist.name = artistDto.name;
+    artist.genres = artistDto.genres;
+    artist.popularity = artistDto.popularity;
+    artist.type = artistDto.type;
+    spotifyArtist.spotifyArtistId = artistDto.id;
+    spotifyArtist.spotifyUri = artistDto.uri;
+    artist.spotifyArtist = spotifyArtist;
+    return artist;
   }
 }

@@ -10,7 +10,7 @@ import {
   OneToOne,
 } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { SpotifyUser } from './spotify-user.entity';
+import { SpotifyUser } from './spotify/spotify-user.entity';
 
 @Entity()
 export class User extends BaseEntity {

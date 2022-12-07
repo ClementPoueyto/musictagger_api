@@ -4,7 +4,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { SpotifyUser } from 'src/shared/entities/spotify-user.entity';
+import { SpotifyUser } from 'src/shared/entities/spotify/spotify-user.entity';
 import { User } from 'src/shared/entities/user.entity';
 
 import { AuthService } from '../authentication/auth/auth.services';

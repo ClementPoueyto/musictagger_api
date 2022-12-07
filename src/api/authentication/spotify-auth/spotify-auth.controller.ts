@@ -82,8 +82,8 @@ export class SpotifyAuthController {
         tokenCreation: new Date(),
       };
       res.redirect(
-        this.config.get('REDIRECT_URL_FRONTEND') +
-          'spotify/success?spotifyId=' +
+        this.config.get('SPOTIFY_REDIRECT_URL_FRONTEND') +
+          'success?spotifyId=' +
           authInfoDto.spotifyId +
           '&spotifyAccessToken=' +
           authInfoDto.spotifyAccessToken +
@@ -98,7 +98,7 @@ export class SpotifyAuthController {
     } catch (err) {
       console.log(err);
       res.redirect(
-        this.config.get('REDIRECT_URL_FRONTEND') + 'spotify/failure',
+        this.config.get('SPOTIFY_REDIRECT_URL_FRONTEND') + 'failure',
       );
       return req.authInfo;
     }

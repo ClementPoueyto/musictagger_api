@@ -6,7 +6,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { Playlist } from 'src/shared/entities/playlist.entity';
-import { SpotifyPlaylist } from 'src/shared/entities/spotify-playlist.entity';
+import { SpotifyPlaylist } from 'src/shared/entities/spotify/spotify-playlist.entity';
 import { Track } from 'src/shared/entities/track.entity';
 import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
 import { SpotifyPaginationPlaylistsDto } from '../spotify/dto/spotify-pagination-playlists.dto';
@@ -271,7 +271,7 @@ export class PlaylistService {
     const track = new Track();
     track.artistName = trackDto.artists[0].name;
     track.albumTitle = trackDto.album.name;
-    track.artists = trackDto.artists.map((art) => art.name);
+    track.artists = [];
     track.title = trackDto.name;
     track.image = trackDto.album.images[0].url;
     track.duration = trackDto.duration_ms;

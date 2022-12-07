@@ -22,6 +22,7 @@ export class SpotifyModule implements OnModuleInit {
     this.httpService.axiosRef.interceptors.response.use(
       (response: any) => response,
       (error: any) => {
+        console.log(error.response);
         if (error.response.status === HttpStatus.BAD_REQUEST) {
           throw new SpotifyBadRequestException(
             error.response.data.error.message,

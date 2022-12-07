@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SpotifyUser } from 'src/shared/entities/spotify-user.entity';
+import { SpotifyUser } from 'src/shared/entities/spotify/spotify-user.entity';
 import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
 import { SpotifyAccessTokenDto } from './dto/spotify-access-token.dto';
 import { SpotifyUserDto } from './dto/spotify-user.dto';

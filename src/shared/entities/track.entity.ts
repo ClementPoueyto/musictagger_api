@@ -2,11 +2,14 @@ import {
   BaseEntity,
   Column,
   Entity,
+  JoinTable,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { SpotifyTrack } from './spotify-track.entity';
+import { Artist } from './artist.entity';
+import { SpotifyTrack } from './spotify/spotify-track.entity';
 import { TaggedTrack } from './tagged-track.entity';
 
 @Entity()
@@ -23,9 +26,6 @@ export class Track extends BaseEntity {
 
   @Column({ type: 'varchar' })
   albumTitle: string;
-
-  @Column('text', { array: true })
-  artists: string[];
 
   @Column({ type: 'varchar' })
   title: string;
@@ -47,4 +47,8 @@ export class Track extends BaseEntity {
 
   @OneToMany(() => TaggedTrack, (tt) => tt.track, { eager: false })
   taggedTracks: TaggedTrack[];
+
+  @ManyToMany(() => Artist, (a) => a.tracks, { eager: false, cascade: true })
+  @JoinTable()
+  artists: Artist[];
 }
