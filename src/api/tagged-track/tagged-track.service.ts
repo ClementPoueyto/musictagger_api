@@ -18,11 +18,7 @@ export class TaggedTrackService {
   private readonly playlistService: PlaylistService;
 
   async addTagToTrack(createTag: CreateTaggedTrackDto, userId: string) {
-    const track = await this.trackService.getTrackById(
-      createTag.trackId,
-      true,
-      false,
-    );
+    const track = await this.trackService.getTrackById(createTag.trackId, true);
     track.taggedTracks = [];
     const existingTaggedTrack = await TaggedTrack.findOne({
       where: { track: { id: createTag.trackId }, userId: userId },
@@ -47,11 +43,7 @@ export class TaggedTrackService {
   }
 
   async deleteTagToTrack(deleteTag: CreateTaggedTrackDto, userId: string) {
-    const track = await this.trackService.getTrackById(
-      deleteTag.trackId,
-      false,
-      false,
-    );
+    const track = await this.trackService.getTrackById(deleteTag.trackId);
     const existingTaggedTrack = await TaggedTrack.findOne({
       where: { track: { id: deleteTag.trackId }, userId: userId },
     });
@@ -97,7 +89,7 @@ export class TaggedTrackService {
       where: { track: { id: trackId }, userId: userId },
     });
     if (!tag) {
-      const track = await this.trackService.getTrackById(trackId, false, false);
+      const track = await this.trackService.getTrackById(trackId);
       return {
         id: '',
         tags: [],

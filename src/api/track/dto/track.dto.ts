@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
+import { SpotifyTrackAnalysisDto } from 'src/api/spotify/dto/spotify-track-analysis.dto';
 import { TaggedTrackDto } from 'src/api/tagged-track/dto/tagged-track.dto';
-import { ArtistDto } from './artist.dto';
 import { SpotifyTrackInfoDto } from './spotify-track.dto';
 
 export class TrackDto {
@@ -45,6 +45,10 @@ export class TrackDto {
   @Expose()
   @Type(() => TaggedTrackDto)
   taggedTracks: TaggedTrackDto[];
+
+  @Expose()
+  @Type(() => SpotifyTrackAnalysisDto)
+  analyse: SpotifyTrackAnalysisDto;
 
   @Expose()
   @ApiProperty()

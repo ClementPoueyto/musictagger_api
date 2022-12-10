@@ -9,6 +9,7 @@ import {
   Unique,
 } from 'typeorm';
 import { Artist } from './artist.entity';
+import { SpotifyTrackAnalysis } from './spotify/spotify-track-analysis.entity';
 import { SpotifyTrack } from './spotify/spotify-track.entity';
 import { TaggedTrack } from './tagged-track.entity';
 
@@ -44,6 +45,9 @@ export class Track extends BaseEntity {
 
   @Column({ nullable: true })
   popularity?: number;
+
+  @Column(() => SpotifyTrackAnalysis)
+  analysis: SpotifyTrackAnalysis;
 
   @OneToMany(() => TaggedTrack, (tt) => tt.track, { eager: false })
   taggedTracks: TaggedTrack[];

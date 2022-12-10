@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
 import { TrackDto } from './dto/track.dto';
-import { BadRequestException } from '@nestjs/common';
 import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
 import { SpotifyService } from '../spotify/spotify.service';
 import { UserService } from '../user/user.services';
@@ -14,6 +13,9 @@ import { SpotifyArtistDto } from '../spotify/dto/spotify-artist.dto';
 import { Artist } from 'src/shared/entities/artist.entity';
 import { SpotifyArtist } from 'src/shared/entities/spotify/spotify-artist.entity';
 import { In } from 'typeorm';
+import { SpotifyTrackAnalysisDto } from '../spotify/dto/spotify-track-analysis.dto';
+import { SpotifyTrackAnalysis } from 'src/shared/entities/spotify/spotify-track-analysis.entity';
+import { from } from 'rxjs';
 
 @Injectable()
 export class TrackService {
@@ -23,9 +25,12 @@ export class TrackService {
   @Inject()
   private readonly userService: UserService;
 
-  async getTrackById(id: string, taggedtracks: boolean, artists: boolean) {
+  async getTrackById(id: string, taggedtracks?: boolean, artists?: boolean) {
     const track = await Track.findOneOrFail({
-      relations: { taggedTracks: taggedtracks, artists: artists },
+      relations: {
+        taggedTracks: taggedtracks,
+        artists: artists,
+      },
       where: { id: id },
     });
     return track;
@@ -49,6 +54,7 @@ export class TrackService {
       const spotifyLikedTracksEntities = spotifyLikedTracks.items.map((item) =>
         this.dtoToEntitySpotifyTrackMapping(item.track),
       );
+      const newTracks: Track[] = [];
       for (const trackEntity of spotifyLikedTracksEntities) {
         try {
           const currTrack = await Track.findOne({
@@ -60,13 +66,21 @@ export class TrackService {
           });
           if (currTrack) {
             trackEntity.id = currTrack.id;
+
+            //TODO A DELETE PROCHAINE MAJ ( uniquement pour recup artists cote prod)
+            await this.saveTrack(trackEntity);
+          } else {
+            const newTrack = await this.saveTrack(trackEntity);
+            trackEntity.id = newTrack.id;
+            newTracks.push(trackEntity);
           }
-          await this.saveTrack(trackEntity);
         } catch (err) {
           console.log(err);
         }
       }
-
+      if (newTracks.length > 0) {
+        this.updateDetailsTracks(newTracks.map((t) => t.id));
+      }
       const res: any[] = [];
 
       for (const e of spotifyLikedTracksEntities) {
@@ -125,6 +139,7 @@ export class TrackService {
         relations: { taggedTracks: false, artists: true },
       });
     }
+
     return request.then((tracks) => {
       const artistIds = new Set(
         tracks
@@ -132,38 +147,50 @@ export class TrackService {
           .filter((f) => f != null)
           .map((a) => a.spotifyArtist.spotifyArtistId),
       );
-      return this.spotifyService
-        .getArtistsByIds(Array.from(artistIds.values()))
-        .then((spotifyArtists) => {
-          const artists = spotifyArtists
-            .map((a) => this.dtoToEntitySpotifyArtistMapping(a))
-            .filter((a) => a != null && a.spotifyArtist != null);
-
-          artists.forEach((artist) => {
-            return Artist.findOne({
-              where: {
-                spotifyArtist: {
-                  spotifyArtistId: artist.spotifyArtist.spotifyArtistId,
-                },
+      return Promise.all([
+        this.spotifyService.getArtistsByIds(Array.from(artistIds.values())),
+        this.spotifyService.getTrackAnalysisByIds(
+          tracks.map((t) => t.spotifyTrack.spotifyId),
+        ),
+      ]).then(async (result) => {
+        const artists = result[0].map((a) =>
+          this.dtoToEntitySpotifyArtistMapping(a),
+        );
+        for (const artist of artists) {
+          const artistsEntity = await Artist.findOne({
+            where: {
+              spotifyArtist: {
+                spotifyArtistId: artist.spotifyArtist.spotifyArtistId,
               },
-              relations: { tracks: true },
-            }).then((art) => {
-              if (art) {
-                art.genres = artist.genres;
-                art.popularity = artist.popularity;
-                for (const track of art.tracks) {
-                  this.getTrackById(track.id, false, false).then((track) => {
-                    if (art.genres) {
-                      track.genres = art.genres;
-                    }
-                    Track.update(track.id, track);
-                  });
-                }
-                return Artist.save(art);
-              }
-            });
+            },
+            relations: { tracks: true },
           });
-        });
+          if (artistsEntity) {
+            artistsEntity.genres = artist.genres;
+            artistsEntity.popularity = artist.popularity;
+            await Artist.save(artistsEntity);
+          }
+        }
+
+        for (const analyse of result[1]) {
+          const track = await Track.findOne({
+            where: { spotifyTrack: { spotifyId: analyse.id } },
+            relations: { artists: true, taggedTracks: false },
+          });
+          if (track) {
+            track.analysis =
+              this.dtoToEntitySpotifyTrackAnalysisMapping(analyse);
+            let genres: string[] = [];
+            for (const trackArtist of track.artists) {
+              if (trackArtist.genres && trackArtist.genres.length > 0) {
+                genres = genres.concat(trackArtist.genres);
+              }
+            }
+            track.genres = [...new Set(genres)];
+            await Track.save(track);
+          }
+        }
+      });
     });
   }
 
@@ -199,6 +226,86 @@ export class TrackService {
     return await Track.save(track);
   }
 
+  async getSuggestionsTags(trackId: string): Promise<string[]> {
+    let suggestions: string[] = [];
+    const track = await this.getTrackById(trackId, true, true);
+    suggestions = suggestions.concat(track.genres);
+
+    if (
+      track.artists.map((a) => a.popularity).filter((v) => Number(v) >= 70)
+        .length > 0
+    ) {
+      suggestions.push('popular artist');
+    }
+
+    if (
+      track.artists.map((a) => a.popularity).filter((v) => Number(v) <= 50)
+        .length > 0
+    ) {
+      suggestions.push('unknown artist');
+    }
+    if (track.analysis) {
+      if (track.analysis.energy && track.analysis.energy >= 0.8) {
+        suggestions.push('energetic');
+      }
+      if (track.analysis.energy && track.analysis.energy <= 0.5) {
+        suggestions.push('chill');
+      }
+      if (track.analysis.tempo && track.analysis.tempo >= 130) {
+        suggestions.push('high bpm');
+      }
+      if (track.analysis.tempo && track.analysis.tempo <= 90) {
+        suggestions.push('slow bpm');
+      }
+      if (
+        track.analysis.tempo &&
+        track.analysis.energy &&
+        track.analysis.tempo >= 130 &&
+        track.analysis.energy >= 0.8
+      ) {
+        suggestions.push('sport');
+      }
+      if (track.analysis.valence && track.analysis.valence >= 0.8) {
+        suggestions.push('happy');
+      }
+      if (track.analysis.valence && track.analysis.valence <= 0.4) {
+        suggestions.push('sad');
+      }
+      if (
+        track.analysis.instrumentalness &&
+        track.analysis.instrumentalness >= 0.6
+      ) {
+        suggestions.push('instrumental');
+      }
+      if (
+        track.analysis.danceability &&
+        (track.analysis.danceability >= 0.85 ||
+          (track.analysis.energy &&
+            track.analysis.danceability > 0.7 &&
+            track.analysis.energy > 0.8))
+      ) {
+        suggestions.push('dance');
+      }
+      if (track.popularity && track.popularity > 0.75) {
+        suggestions.push('hit');
+      }
+      const yearDiff = Math.abs(
+        new Date(
+          track.releaseDate.getTime() - new Date().getTime(),
+        ).getFullYear() - 1970,
+      );
+      if (yearDiff < 2) {
+        suggestions.push('recent');
+      }
+    }
+    suggestions.push(track.releaseDate.getFullYear().toString());
+    suggestions.push(
+      (Math.round(track.releaseDate.getFullYear() / 10) * 10).toString() + "'s",
+    );
+
+    return suggestions;
+  }
+
   private dtoToEntitySpotifyTrackMapping(trackDto: SpotifyTrackDto): Track {
     const track = new Track();
     track.artists = trackDto.artists.map((a) =>
@@ -228,5 +335,25 @@ export class TrackService {
     spotifyArtist.spotifyUri = artistDto.uri;
     artist.spotifyArtist = spotifyArtist;
     return artist;
+  }
+
+  private dtoToEntitySpotifyTrackAnalysisMapping(
+    analysisDto: SpotifyTrackAnalysisDto,
+  ): SpotifyTrackAnalysis {
+    const analysis = new SpotifyTrackAnalysis();
+    analysis.key = analysisDto.key;
+    analysis.acousticness = analysisDto.acousticness;
+    analysis.danceability = analysisDto.danceability;
+    analysis.duration_ms = analysisDto.duration_ms;
+    analysis.energy = analysisDto.energy;
+    analysis.instrumentalness = analysisDto.instrumentalness;
+    analysis.liveness = analysisDto.liveness;
+    analysis.loudness = analysisDto.loudness;
+    analysis.mode = analysisDto.mode;
+    analysis.speechiness = analysisDto.speechiness;
+    analysis.tempo = analysisDto.tempo;
+    analysis.time_signature = analysisDto.time_signature;
+    analysis.valence = analysisDto.valence;
+    return analysis;
   }
 }

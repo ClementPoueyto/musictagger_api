@@ -7,7 +7,7 @@ import { SpotifyPaginationPlaylistsDto } from './dto/spotify-pagination-playlist
 import { SpotifyPaginationTracksDto } from './dto/spotify-pagination-tracks.dto';
 import { SpotifySeveralTracksDto } from './dto/spotify-several-tracks.dto';
 import { SpotifyArtistDto } from './dto/spotify-artist.dto';
-import { SpotifyTrackDto } from './dto/spotify-track.dto';
+import { SpotifyTrackAnalysisDto } from './dto/spotify-track-analysis.dto';
 
 @Injectable()
 export class SpotifyService {
@@ -25,6 +25,16 @@ export class SpotifyService {
     return {
       Accept: 'application/json',
       Authorization: 'Bearer ' + accessToken,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  private async getAppHeaders() {
+    const token = await this.spotifyAuthService.getAppAccessToken();
+    if (!token) throw Error('token app not found');
+    return {
+      Accept: 'application/json',
+      Authorization: 'Bearer ' + token,
       'Content-Type': 'application/json',
     };
   }
@@ -114,16 +124,10 @@ export class SpotifyService {
   }
 
   async getTracksById(ids: string[]): Promise<SpotifySeveralTracksDto> {
-    const token = await this.spotifyAuthService.getAppAccessToken();
-    if (!token) throw Error('token app not found');
     const res = await this.httpService.axiosRef.get(
       this.SPOTIFY_URL + 'tracks?ids=' + ids.join(','),
       {
-        headers: {
-          Accept: 'application/json',
-          Authorization: 'Bearer ' + token,
-          'Content-Type': 'application/json',
-        },
+        headers: await this.getAppHeaders(),
       },
     );
 
@@ -132,25 +136,19 @@ export class SpotifyService {
     });
   }
 
-  async getArtistsByIds(ids: string[]) {
+  async getArtistsByIds(ids: string[]): Promise<SpotifyArtistDto[]> {
     let index = 0;
     let artists: SpotifyArtistDto[] = [];
-    const token = await this.spotifyAuthService.getAppAccessToken();
-    if (!token) throw Error('token app not found');
     while (index < ids.length) {
       const res = await this.httpService.axiosRef.get(
         this.SPOTIFY_URL +
           'artists?ids=' +
           ids.slice(index, index + this.MAX_SIZE_ARRAY).join(','),
         {
-          headers: {
-            Accept: 'application/json',
-            Authorization: 'Bearer ' + token,
-            'Content-Type': 'application/json',
-          },
+          headers: await this.getAppHeaders(),
         },
       );
-      index += artists.length;
+      index += res.data.artists.length;
       artists = artists.concat(
         plainToInstance(SpotifyArtistDto, res.data.artists, {
           excludeExtraneousValues: true,
@@ -158,5 +156,29 @@ export class SpotifyService {
       );
     }
     return artists;
+  }
+
+  async getTrackAnalysisByIds(
+    ids: string[],
+  ): Promise<SpotifyTrackAnalysisDto[]> {
+    let index = 0;
+    let analysis: SpotifyTrackAnalysisDto[] = [];
+    while (index < ids.length) {
+      const res = await this.httpService.axiosRef.get(
+        this.SPOTIFY_URL +
+          'audio-features?ids=' +
+          ids.slice(index, index + this.MAX_SIZE_ARRAY).join(','),
+        {
+          headers: await this.getAppHeaders(),
+        },
+      );
+      index += res.data.audio_features.length;
+      analysis = analysis.concat(
+        plainToInstance(SpotifyTrackAnalysisDto, res.data.audio_features, {
+          excludeExtraneousValues: true,
+        }),
+      );
+    }
+    return analysis;
   }
 }

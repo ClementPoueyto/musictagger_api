@@ -45,7 +45,6 @@ export class TrackController {
     if (userId != req.user.id) {
       throw new UnauthorizedException();
     }
-
     return await this.trackService.getLikedTrack(req.user.id, page, size);
   }
 
@@ -67,7 +66,17 @@ export class TrackController {
   })
   @UseInterceptors(NotFoundInterceptor)
   @Put('')
-  async getTracksDetails(): Promise<void> {
+  async updateTracksDetails(): Promise<void> {
     return this.trackService.updateDetailsTracks();
+  }
+
+  @ApiOkResponse({ description: 'get suggestions tags' })
+  @UseInterceptors(NotFoundInterceptor)
+  @Get(':id/suggestions')
+  async getSuggestionsTags(
+    @Param('id', ParseIntPipe) trackId: string,
+  ): Promise<string[]> {
+    if (!trackId) throw new BadRequestException('track id missing');
+    return await this.trackService.getSuggestionsTags(trackId);
   }
 }
