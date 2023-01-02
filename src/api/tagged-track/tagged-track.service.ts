@@ -8,21 +8,27 @@ import { TrackService } from '../track/track.service';
 import { CreateTaggedTrackDto } from './dto/create-tagged-track.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
 import { TaggedTrackDto } from './dto/tagged-track.dto';
+import { TaggedTrackRepository } from './tagged-track.repository';
 
 @Injectable()
 export class TaggedTrackService {
-  @Inject(TrackService)
+  @Inject()
   private readonly trackService: TrackService;
 
   @Inject(forwardRef(() => PlaylistService))
   private readonly playlistService: PlaylistService;
 
+  @Inject()
+  private readonly taggedTrackRepository: TaggedTrackRepository;
+
   async addTagToTrack(createTag: CreateTaggedTrackDto, userId: string) {
     const track = await this.trackService.getTrackById(createTag.trackId, true);
     track.taggedTracks = [];
-    const existingTaggedTrack = await TaggedTrack.findOne({
-      where: { track: { id: createTag.trackId }, userId: userId },
-    });
+    const existingTaggedTrack =
+      await this.taggedTrackRepository.getByTrackIdAndUserId(
+        createTag.trackId,
+        userId,
+      );
     const taggedTrack = new TaggedTrack();
     if (existingTaggedTrack) {
       taggedTrack.id = existingTaggedTrack.id;
@@ -35,18 +41,20 @@ export class TaggedTrackService {
       : taggedTrack.tags.push(createTag.tag);
     taggedTrack.userId = userId;
     taggedTrack.track = track;
+    await this.playlistsDelete(userId, taggedTrack.tags);
 
-    await TaggedTrack.save(taggedTrack);
+    await this.taggedTrackRepository.save(taggedTrack);
+    await this.playlistsAdd(userId, taggedTrack.tags);
 
-    this.playlistsChangement(userId, taggedTrack.tags);
     return taggedTrack;
   }
 
   async deleteTagToTrack(deleteTag: CreateTaggedTrackDto, userId: string) {
     const track = await this.trackService.getTrackById(deleteTag.trackId);
-    const existingTaggedTrack = await TaggedTrack.findOne({
-      where: { track: { id: deleteTag.trackId }, userId: userId },
-    });
+    const existingTaggedTrack = await this.getTaggedTrackByTrackId(
+      deleteTag.trackId,
+      userId,
+    );
     const taggedTrack = new TaggedTrack();
     if (existingTaggedTrack) {
       taggedTrack.id = existingTaggedTrack.id;
@@ -55,24 +63,26 @@ export class TaggedTrackService {
       taggedTrack.tags = [];
     }
     const oldTags = [...taggedTrack.tags];
+
     taggedTrack.tags = taggedTrack.tags.filter((e) => {
       return e != deleteTag.tag;
     });
+    await this.playlistsDelete(userId, oldTags);
     if (taggedTrack.tags.length == 0) {
-      await TaggedTrack.remove(taggedTrack);
+      await this.taggedTrackRepository.remove(taggedTrack);
     } else {
       taggedTrack.userId = userId;
       taggedTrack.track = track;
-      await TaggedTrack.save(taggedTrack);
+      await this.taggedTrackRepository.save(taggedTrack);
     }
-    this.playlistsChangement(userId, oldTags);
+    await this.playlistsAdd(userId, oldTags);
   }
 
-  private async playlistsChangement(userId: string, tags: string[]) {
+  private async playlistsAdd(userId: string, tags: string[]) {
     const playlists: Playlist[] =
       await this.playlistService.getPlaylistsContainingTags(userId, tags);
     for (const playlist of playlists) {
-      this.playlistService.updatePlaylistTracks(
+      await this.playlistService.addPlaylistTracks(
         userId,
         playlist,
         playlist.tags,
@@ -80,14 +90,23 @@ export class TaggedTrackService {
     }
   }
 
+  private async playlistsDelete(userId: string, tags: string[]) {
+    const playlists: Playlist[] =
+      await this.playlistService.getPlaylistsContainingTags(userId, tags);
+    for (const playlist of playlists) {
+      await this.playlistService.clearPlaylist(userId, playlist, playlist.tags);
+    }
+  }
+
   async getTaggedTrackByTrackId(
     trackId: string,
     userId: string,
   ): Promise<TaggedTrackDto> {
-    const tag = await TaggedTrack.findOne({
-      relations: { track: true },
-      where: { track: { id: trackId }, userId: userId },
-    });
+    const tag = await this.taggedTrackRepository.getByTrackIdAndUserId(
+      trackId,
+      userId,
+      true,
+    );
     if (!tag) {
       const track = await this.trackService.getTrackById(trackId);
       return {
@@ -102,7 +121,7 @@ export class TaggedTrackService {
   }
 
   async getAllTagsName(userId: string) {
-    const taggedTracks = await TaggedTrack.find({ where: { userId: userId } });
+    const taggedTracks = await this.taggedTrackRepository.getByUserId(userId);
     if (!taggedTracks) {
       return [];
     }
@@ -148,30 +167,21 @@ export class TaggedTrackService {
     query = '',
     onlyMetadata?: boolean,
   ): Promise<PaginatedResultDto<TaggedTrackDto>> {
-    if (!limit || limit > 50) {
+    if (!limit) {
       limit = 50;
     }
     if (!page) {
       page = 0;
     }
-    const taggedTracksBuilder = await TaggedTrack.createQueryBuilder(
-      'taggedtrack',
-    )
-      .innerJoinAndSelect('taggedtrack.track', 'track')
-      .where('taggedtrack.userId = :id', { id: userId });
-    taggedTracksBuilder.andWhere('tags @> :filters', { filters: tags });
-    taggedTracksBuilder.andWhere(
-      '(LOWER(track.title) LIKE LOWER(:query) OR LOWER(track.artistName) LIKE LOWER(:query) OR LOWER(track.albumTitle) LIKE LOWER(:query))',
-      {
-        query: '%' + query + '%',
-      },
-    );
-    taggedTracksBuilder
-      .orderBy('taggedtrack.id', 'DESC')
-      .limit(limit || 50)
-      .offset(page * limit || 0);
     if (onlyMetadata) {
-      const res = await taggedTracksBuilder.getCount();
+      const res =
+        await this.taggedTrackRepository.getCountByUserIdAndTagsAndQuery(
+          userId,
+          tags,
+          query,
+          page,
+          limit,
+        );
       const resultDto: PaginatedResultDto<TaggedTrackDto> = {
         data: [],
         metadata: {
@@ -182,7 +192,14 @@ export class TaggedTrackService {
       };
       return resultDto;
     } else {
-      const res = await taggedTracksBuilder.getManyAndCount();
+      const res =
+        await this.taggedTrackRepository.getPaginationByUserIdAndTagsAndQuery(
+          userId,
+          tags,
+          query,
+          page,
+          limit,
+        );
       const resultDto: PaginatedResultDto<TaggedTrackDto> = {
         data: plainToInstance(TaggedTrackDto, res[0], {
           excludeExtraneousValues: true,
@@ -193,7 +210,6 @@ export class TaggedTrackService {
           limit: limit,
         },
       };
-
       return resultDto;
     }
   }

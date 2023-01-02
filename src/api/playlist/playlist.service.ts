@@ -16,6 +16,7 @@ import { TaggedTrackService } from '../tagged-track/tagged-track.service';
 import { UserService } from '../user/user.services';
 import { CreateSpotifyPlaylistDto } from './dto/create-spotify-playlist.dto';
 import { PaginatedResultDto } from './dto/paginated-result.dto';
+import { PlaylistRepository } from './playlist.repository';
 
 @Injectable()
 export class PlaylistService {
@@ -25,13 +26,14 @@ export class PlaylistService {
   @Inject()
   private readonly userService: UserService;
 
+  @Inject()
+  private readonly playlistRepository: PlaylistRepository;
+
   @Inject(forwardRef(() => TaggedTrackService))
   private readonly taggedtrackService: TaggedTrackService;
 
   async getPlaylistById(userId: string, playlistId: string) {
-    const playlist = await Playlist.findOneOrFail({
-      where: { id: playlistId },
-    });
+    const playlist = await this.playlistRepository.getById(playlistId);
     if (playlist.userId != userId) throw new UnauthorizedException();
     return playlist;
   }
@@ -42,7 +44,7 @@ export class PlaylistService {
     page = 0,
     limit = 50,
   ) {
-    if (!limit || limit > 50) {
+    if (!limit) {
       limit = 50;
     }
     if (!page) {
@@ -70,8 +72,7 @@ export class PlaylistService {
   }
 
   async getPlaylists(userId: string) {
-    const playlists = await Playlist.find({ where: { userId: userId } });
-    return playlists;
+    return await this.playlistRepository.getByUserId(userId);
   }
 
   async createPlaylist(
@@ -96,29 +97,25 @@ export class PlaylistService {
     const playlist = this.dtoToEntitySpotifyPlaylistMapping(createdPlaylist);
     playlist.userId = userId;
     playlist.tags = tags;
-
-    await Playlist.save(playlist);
+    await this.playlistRepository.save(playlist);
     return playlist;
   }
 
   async getPlaylistByTags(userId: string, tags: string[]): Promise<Playlist> {
-    const playlistBuilder = await Playlist.createQueryBuilder('playlist')
-      .where('playlist.userId = :id', { id: userId })
-      .andWhere('tags <@ :tags', { tags: tags })
-      .andWhere('array_length(tags,1) = :size', { size: tags.length });
-
-    return await playlistBuilder.getOneOrFail();
+    return await this.playlistRepository.getPlaylistByTagsAndByUserId(
+      userId,
+      tags,
+    );
   }
 
   async getPlaylistsContainingTags(
     userId: string,
     tags: string[],
   ): Promise<Playlist[]> {
-    const playlistBuilder = await Playlist.createQueryBuilder('playlist')
-      .where('playlist.userId = :id', { id: userId })
-      .andWhere('tags <@ :tags', { tags: tags });
-    const res = await playlistBuilder.getMany();
-    return res;
+    return await this.playlistRepository.getPlaylistsContainingTagsAndByUserId(
+      userId,
+      tags,
+    );
   }
 
   async generatePlaylistItems(
@@ -144,23 +141,16 @@ export class PlaylistService {
     const tracks = await this.taggedtrackService.getTaggedTracks(
       userId,
       0,
-      Number.MAX_VALUE,
+      Number.MAX_SAFE_INTEGER,
       tags,
       '',
     );
-    let doRequest = true;
 
-    let offset = 0;
-    const limit = 100;
-    while (doRequest) {
-      await this.spotifyService.updateItemsPlaylist(
-        spotifyId,
-        tracks.data.map((t) => t.track.spotifyTrack.uri),
-        playlist.spotifyPlaylist.spotifyPlaylistId,
-      );
-      offset++;
-      doRequest = tracks.data.length > offset * limit;
-    }
+    await this.spotifyService.addItemsPlaylist(
+      spotifyId,
+      tracks.data.map((t) => t.track.spotifyTrack.uri),
+      playlist.spotifyPlaylist.spotifyPlaylistId,
+    );
 
     return playlist;
   }
@@ -202,11 +192,13 @@ export class PlaylistService {
       updatePlaylistBody.description.split('| TAGS :')[0] + ' | TAGS : ' + tags;
     updatePlaylistBody.name =
       updatePlaylistBody.name.split('| MUSICTAG')[0] + ' | MUSICTAG';
+    await this.clearPlaylist(userId, playlist, playlist.tags);
 
     playlist.description = updatePlaylistBody.description;
     playlist.name = updatePlaylistBody.name;
     playlist.tags = tags;
-    await Playlist.save(playlist);
+
+    await this.playlistRepository.save(playlist);
 
     await this.spotifyService.updateDetailsPlaylist(
       spotifyId,
@@ -214,43 +206,50 @@ export class PlaylistService {
       playlist.spotifyPlaylist.spotifyPlaylistId,
     );
     if (isNewTags) {
-      this.updatePlaylistTracks(userId, playlist, tags);
+      await this.addPlaylistTracks(userId, playlist, tags);
     }
     return playlist;
   }
 
-  async updatePlaylistTracks(
-    userId: string,
-    playlist: Playlist,
-    tags: string[],
-  ) {
+  async clearPlaylist(userId: string, playlist: Playlist, tags: string[]) {
     const user = await this.userService.findById(userId);
     if (!user.spotifyUser) throw new SpotifyUserRequiredException();
     const spotifyId = user.spotifyUser?.spotifyId;
     const tracks = await this.taggedtrackService.getTaggedTracks(
       userId,
       0,
-      Number.MAX_VALUE,
+      Number.MAX_SAFE_INTEGER,
       tags,
       '',
     );
-    let doRequest = true;
+    return await this.spotifyService.deleteItemsPlaylist(
+      spotifyId,
+      tracks.data.map((t) => t.track.spotifyTrack.uri),
+      playlist.spotifyPlaylist.spotifyPlaylistId,
+    );
+  }
 
-    let offset = 0;
-    const limit = 100;
-    while (doRequest) {
-      await this.spotifyService.updateItemsPlaylist(
-        spotifyId,
-        tracks.data.map((t) => t.track.spotifyTrack.uri),
-        playlist.spotifyPlaylist.spotifyPlaylistId,
-      );
-      offset++;
-      doRequest = tracks.data.length > offset * limit;
-    }
+  async addPlaylistTracks(userId: string, playlist: Playlist, tags: string[]) {
+    const user = await this.userService.findById(userId);
+    if (!user.spotifyUser) throw new SpotifyUserRequiredException();
+    const spotifyId = user.spotifyUser?.spotifyId;
+    const tracks = await this.taggedtrackService.getTaggedTracks(
+      userId,
+      0,
+      Number.MAX_SAFE_INTEGER,
+      tags,
+      '',
+    );
+
+    return await this.spotifyService.addItemsPlaylist(
+      spotifyId,
+      tracks.data.map((t) => t.track.spotifyTrack.uri),
+      playlist.spotifyPlaylist.spotifyPlaylistId,
+    );
   }
 
   async deletePlaylist(playlistId: string) {
-    await Playlist.delete(playlistId);
+    await this.playlistRepository.delete(playlistId);
   }
 
   private dtoToEntitySpotifyPlaylistMapping(

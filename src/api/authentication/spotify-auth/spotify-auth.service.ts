@@ -5,6 +5,7 @@ import { SpotifyUser } from 'src/shared/entities/spotify/spotify-user.entity';
 import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
 import { SpotifyAccessTokenDto } from './dto/spotify-access-token.dto';
 import { SpotifyUserDto } from './dto/spotify-user.dto';
+import { SpotifyAuthRepository } from './spotify-auth.repository';
 
 @Injectable()
 export class SpotifyAuthService {
@@ -13,13 +14,13 @@ export class SpotifyAuthService {
   @Inject(ConfigService)
   private readonly config: ConfigService;
 
+  @Inject()
+  private readonly spotifyUserRepository: SpotifyAuthRepository;
+
   constructor(private readonly httpService: HttpService) {}
 
   async findById(id: string) {
-    return await SpotifyUser.findOneOrFail({
-      where: { spotifyId: id },
-      relations: { user: true },
-    });
+    return await this.spotifyUserRepository.getById(id, true);
   }
 
   async updateSpotifyUser(spotifyUserDto: SpotifyUserDto) {
@@ -31,11 +32,11 @@ export class SpotifyAuthService {
     spotifyUser.spotifyRefreshToken = spotifyUserDto.spotifyRefreshToken;
     spotifyUser.tokenCreation = spotifyUserDto.tokenCreation;
     spotifyUser.expiresIn = spotifyUserDto.expiresIn;
-    SpotifyUser.save(spotifyUser);
+    this.spotifyUserRepository.save(spotifyUser);
   }
 
   async deleteSpotifyUser(user: SpotifyUser) {
-    SpotifyUser.remove(user);
+    this.spotifyUserRepository.remove(user);
   }
 
   async refresh_access_token(
@@ -66,7 +67,7 @@ export class SpotifyAuthService {
     spotifyUser.spotifyAccessToken = spotifyTokenAccess.access_token;
     spotifyUser.tokenCreation = new Date();
     spotifyUser.expiresIn = spotifyTokenAccess.expires_in;
-    SpotifyUser.save(spotifyUser);
+    this.spotifyUserRepository.save(spotifyUser);
 
     return spotifyTokenAccess;
   }

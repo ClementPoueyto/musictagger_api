@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { SpotifyAuthBadRequestException } from './errors/spotify-auth-unauthorized.error copy';
 import { SpotifyAuthUnauthorizedException } from './errors/spotify-auth-unauthorized.error';
+import { SpotifyAuthRepository } from './spotify-auth.repository';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { SpotifyAuthUnauthorizedException } from './errors/spotify-auth-unauthor
       }),
     }),
   ],
-  providers: [SpotifyAuthService, SpotifyOauthStrategy],
+  providers: [SpotifyAuthService, SpotifyOauthStrategy, SpotifyAuthRepository],
   controllers: [SpotifyAuthController],
   exports: [SpotifyAuthService],
 })

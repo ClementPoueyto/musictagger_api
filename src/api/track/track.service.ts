@@ -15,7 +15,8 @@ import { SpotifyArtist } from 'src/shared/entities/spotify/spotify-artist.entity
 import { In } from 'typeorm';
 import { SpotifyTrackAnalysisDto } from '../spotify/dto/spotify-track-analysis.dto';
 import { SpotifyTrackAnalysis } from 'src/shared/entities/spotify/spotify-track-analysis.entity';
-import { from } from 'rxjs';
+import { TrackRepository } from './track.repository';
+import { ArtistRepository } from './artist.repository';
 
 @Injectable()
 export class TrackService {
@@ -25,15 +26,14 @@ export class TrackService {
   @Inject()
   private readonly userService: UserService;
 
+  @Inject()
+  private readonly trackRepository: TrackRepository;
+
+  @Inject()
+  private readonly artistRepository: ArtistRepository;
+
   async getTrackById(id: string, taggedtracks?: boolean, artists?: boolean) {
-    const track = await Track.findOneOrFail({
-      relations: {
-        taggedTracks: taggedtracks,
-        artists: artists,
-      },
-      where: { id: id },
-    });
-    return track;
+    return await this.trackRepository.getById(id, taggedtracks, artists);
   }
 
   async getLikedTrack(
@@ -57,18 +57,14 @@ export class TrackService {
       const newTracks: Track[] = [];
       for (const trackEntity of spotifyLikedTracksEntities) {
         try {
-          const currTrack = await Track.findOne({
-            where: {
-              artistName: trackEntity.artistName,
-              albumTitle: trackEntity.albumTitle,
-              title: trackEntity.title,
-            },
-          });
+          const currTrack =
+            await this.trackRepository.getByTitleAndArtistNameAndAlbumTitle(
+              trackEntity.title,
+              trackEntity.artistName,
+              trackEntity.albumTitle,
+            );
           if (currTrack) {
             trackEntity.id = currTrack.id;
-
-            //TODO A DELETE PROCHAINE MAJ ( uniquement pour recup artists cote prod)
-            await this.saveTrack(trackEntity);
           } else {
             const newTrack = await this.saveTrack(trackEntity);
             trackEntity.id = newTrack.id;
@@ -84,23 +80,13 @@ export class TrackService {
       const res: any[] = [];
 
       for (const e of spotifyLikedTracksEntities) {
-        await Track.createQueryBuilder('track')
-          .leftJoinAndMapOne(
-            'track.taggedTrack',
-            TaggedTrack,
-            'taggedTrack',
-            'taggedTrack.trackId = track.id  and taggedTrack.userId = :userId',
-            { userId: userId },
+        await this.trackRepository
+          .getTrackByTaggedTrackUserIdAndByTitleAndArtistNameAndAlbumTitle(
+            userId,
+            e.title,
+            e.albumTitle,
+            e.artistName,
           )
-          .where(
-            'track.title = :title and track.albumTitle = :albumTitle and track.artistName = :artistName',
-            {
-              title: e.title,
-              albumTitle: e.albumTitle,
-              artistName: e.artistName,
-            },
-          )
-          .getOne()
           .catch((err: any) => {
             console.log(err);
           })
@@ -130,14 +116,9 @@ export class TrackService {
   updateDetailsTracks(trackIds?: string[]): Promise<void> {
     let request: Promise<Track[]>;
     if (trackIds && trackIds.length > 0) {
-      request = Track.find({
-        where: { id: In(trackIds) },
-        relations: { taggedTracks: false, artists: true },
-      });
+      request = this.trackRepository.getByIds(trackIds, true, false);
     } else {
-      request = Track.find({
-        relations: { taggedTracks: false, artists: true },
-      });
+      request = this.trackRepository.getAll(true, false);
     }
 
     return request.then((tracks) => {
@@ -157,26 +138,24 @@ export class TrackService {
           this.dtoToEntitySpotifyArtistMapping(a),
         );
         for (const artist of artists) {
-          const artistsEntity = await Artist.findOne({
-            where: {
-              spotifyArtist: {
-                spotifyArtistId: artist.spotifyArtist.spotifyArtistId,
-              },
-            },
-            relations: { tracks: true },
-          });
+          const artistsEntity =
+            await this.artistRepository.getByspotifyArtistId(
+              artist.spotifyArtist.spotifyArtistId,
+              true,
+            );
           if (artistsEntity) {
             artistsEntity.genres = artist.genres;
             artistsEntity.popularity = artist.popularity;
-            await Artist.save(artistsEntity);
+            await this.artistRepository.save(artistsEntity);
           }
         }
 
         for (const analyse of result[1]) {
-          const track = await Track.findOne({
-            where: { spotifyTrack: { spotifyId: analyse.id } },
-            relations: { artists: true, taggedTracks: false },
-          });
+          const track = await this.trackRepository.getBySpotifyId(
+            analyse.id,
+            true,
+            false,
+          );
           if (track) {
             track.analysis =
               this.dtoToEntitySpotifyTrackAnalysisMapping(analyse);
@@ -187,7 +166,7 @@ export class TrackService {
               }
             }
             track.genres = [...new Set(genres)];
-            await Track.save(track);
+            await this.trackRepository.save(track);
           }
         }
       });
@@ -201,29 +180,25 @@ export class TrackService {
         const artists = artistsSpotify.map((a) =>
           this.dtoToEntitySpotifyArtistMapping(a),
         );
-        return Artist.create(artists);
+        return this.artistRepository.create(artists);
       });
   }
 
   private async saveTrack(track: Track) {
     const artists: Artist[] = [];
     for (const artist of track.artists) {
-      const existingArtist = await Artist.findOne({
-        where: {
-          spotifyArtist: {
-            spotifyArtistId: artist.spotifyArtist.spotifyArtistId,
-          },
-        },
-      });
+      const existingArtist = await this.artistRepository.getByspotifyArtistId(
+        artist.spotifyArtist.spotifyArtistId,
+      );
       if (!existingArtist) {
-        const newArtist = await Artist.save(artist);
+        const newArtist = await this.artistRepository.save(artist);
         artists.push(newArtist);
       } else {
         artists.push(existingArtist);
       }
     }
     track.artists = artists;
-    return await Track.save(track);
+    return await this.artistRepository.save(track);
   }
 
   async getSuggestionsTags(trackId: string): Promise<string[]> {

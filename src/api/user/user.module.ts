@@ -4,6 +4,7 @@ import { UserService } from './user.services';
 import { PassportModule } from '@nestjs/passport';
 import { SpotifyAuthModule } from '../authentication/spotify-auth/spotify-auth.module';
 import { AuthModule } from '../authentication/auth/auth.module';
+import { UserRepository } from './user.repository';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { AuthModule } from '../authentication/auth/auth.module';
     PassportModule.register({ defaultStrategy: 'jwt', property: 'user' }),
   ],
   controllers: [UserController],
-  providers: [UserService],
-  exports: [UserService],
+  providers: [UserService, UserRepository],
+  exports: [UserService, UserRepository],
 })
 export class UserModule {}

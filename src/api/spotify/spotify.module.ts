@@ -16,7 +16,6 @@ export class SpotifyModule implements OnModuleInit {
   constructor(private httpService: HttpService) {}
   onModuleInit() {
     this.httpService.axiosRef.interceptors.response.use((config) => {
-      //console.log(config);
       return config;
     });
     this.httpService.axiosRef.interceptors.response.use(

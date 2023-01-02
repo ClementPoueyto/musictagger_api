@@ -1,15 +1,15 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AuthLoginDto } from './dto/auth.dto';
-import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtDto } from './dto/jwt.dto';
 import { User } from 'src/shared/entities/user.entity';
+import { UserRepository } from 'src/api/user/user.repository';
 
 @Injectable()
 export class AuthService {
   @InjectRepository(User)
-  private readonly userRepository: Repository<User>;
+  private readonly userRepository: UserRepository;
 
   @Inject(JwtService)
   private readonly jwtService: JwtService;
@@ -28,21 +28,17 @@ export class AuthService {
     const payload = {
       userId: userId,
     };
-    User.update(userId, { lastLoginAt: new Date() });
+    this.userRepository.update(userId, { lastLoginAt: new Date() });
 
     return new JwtDto(this.jwtService.sign(payload));
   }
 
   async validateUser(authLoginDto: AuthLoginDto): Promise<User> {
     const { email, password } = authLoginDto;
-    const user = await this.userRepository.findOneOrFail({
-      where: { email: email },
-      relations: { spotifyUser: true },
-    });
+    const user = await this.userRepository.getByEmailOrFail(email);
     if (!(await user.validatePassword(password))) {
       throw new UnauthorizedException();
     }
-
     return user;
   }
 }

@@ -11,6 +11,7 @@ import { AuthService } from '../authentication/auth/auth.services';
 import { SpotifyUserDto } from '../authentication/spotify-auth/dto/spotify-user.dto';
 import { SpotifyAuthService } from '../authentication/spotify-auth/spotify-auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserRepository } from './user.repository';
 
 @Injectable()
 export class UserService {
@@ -20,6 +21,9 @@ export class UserService {
   @Inject()
   public authService: AuthService;
 
+  @Inject()
+  private readonly userRepository: UserRepository;
+
   async create(createUserDto: CreateUserDto) {
     const user = new User();
     user.isRegisteredWithGoogle = false;
@@ -27,28 +31,18 @@ export class UserService {
     user.password = createUserDto.password;
     user.firstname = createUserDto.firstname;
     user.lastname = createUserDto.lastname;
-    const userCreated = User.save(user).catch(() => {
+    const userCreated = this.userRepository.save(user).catch(() => {
       throw new ConflictException('Login already exists');
     });
     return userCreated;
   }
 
   async findById(id: string): Promise<User> {
-    const user = await User.findOneOrFail({
-      where: { id: id },
-      relations: {
-        spotifyUser: true,
-      },
-    });
-    return user;
+    return await this.userRepository.getById(id, true);
   }
 
   async findByEmail(email: string) {
-    return await User.findOne({
-      where: {
-        email: email,
-      },
-    });
+    return await this.userRepository.getByEmail(email, true);
   }
 
   async loginSpotifyAccount(userId: string, spotifyUser: SpotifyUserDto) {
@@ -83,7 +77,7 @@ export class UserService {
       spotifyUserEntity.tokenCreation = new Date();
       spotifyUserEntity.expiresIn = spotifyUser.expiresIn;
       user.spotifyUser = spotifyUserEntity;
-      await User.save(user);
+      await this.userRepository.save(user);
       return await this.authService.refreshJwtToken(user.id);
     } catch (err) {
       throw new BadRequestException(err);
@@ -93,7 +87,7 @@ export class UserService {
   async logoutSpotifyAccount(userId: string) {
     const user = await this.findById(userId);
     user.spotifyUser = null;
-    await User.save(user);
+    await this.userRepository.save(user);
     return this.authService.refreshJwtToken(user.id);
   }
 }

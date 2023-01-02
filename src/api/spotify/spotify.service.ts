@@ -5,7 +5,6 @@ import { SpotifyAuthService } from '../authentication/spotify-auth/spotify-auth.
 import { SpotifyPlaylistDetailsDto } from './dto/spotify-playlist-details.dto';
 import { SpotifyPaginationPlaylistsDto } from './dto/spotify-pagination-playlists.dto';
 import { SpotifyPaginationTracksDto } from './dto/spotify-pagination-tracks.dto';
-import { SpotifySeveralTracksDto } from './dto/spotify-several-tracks.dto';
 import { SpotifyArtistDto } from './dto/spotify-artist.dto';
 import { SpotifyTrackAnalysisDto } from './dto/spotify-track-analysis.dto';
 
@@ -41,7 +40,7 @@ export class SpotifyService {
 
   async getLikedTracks(spotifyId: string, limit = 50, page = 0) {
     if (!page) page = 0;
-    if (!limit || limit > 50) limit = 50;
+    if (!limit) limit = 50;
     const res = await this.httpService.axiosRef.get(
       this.SPOTIFY_URL + 'me/tracks?limit=' + limit + '&offset=' + page * limit,
       { headers: await this.getHeaders(spotifyId) },
@@ -70,23 +69,41 @@ export class SpotifyService {
     tracksURI: string[],
     playlistId: string,
   ) {
-    await this.httpService.axiosRef.post(
-      this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
-      { uris: tracksURI, position: 0 },
-      { headers: await this.getHeaders(spotifyId) },
-    );
+    console.log(tracksURI);
+    console.log(tracksURI.length);
+    let index = 0;
+    while (index < tracksURI.length) {
+      const array = tracksURI.slice(index, index + this.MAX_SIZE_ARRAY);
+      await this.httpService.axiosRef.post(
+        this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
+        { uris: tracksURI, position: 0 },
+        { headers: await this.getHeaders(spotifyId) },
+      );
+      index += array.length;
+    }
   }
 
-  async updateItemsPlaylist(
+  async deleteItemsPlaylist(
     spotifyId: string,
     tracksURI: string[],
     playlistId: string,
   ) {
-    await this.httpService.axiosRef.put(
-      this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
-      { uris: tracksURI },
-      { headers: await this.getHeaders(spotifyId) },
-    );
+    let index = 0;
+    while (index < tracksURI.length) {
+      const array = tracksURI.slice(index, index + this.MAX_SIZE_ARRAY);
+      await this.httpService.axiosRef.delete(
+        this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
+        {
+          data: {
+            tracks: array.map((a) => {
+              return { uri: a };
+            }),
+          },
+          headers: await this.getHeaders(spotifyId),
+        },
+      );
+      index += array.length;
+    }
   }
 
   async updateDetailsPlaylist(
@@ -119,19 +136,6 @@ export class SpotifyService {
     );
 
     return plainToInstance(SpotifyPaginationTracksDto, res.data, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async getTracksById(ids: string[]): Promise<SpotifySeveralTracksDto> {
-    const res = await this.httpService.axiosRef.get(
-      this.SPOTIFY_URL + 'tracks?ids=' + ids.join(','),
-      {
-        headers: await this.getAppHeaders(),
-      },
-    );
-
-    return plainToInstance(SpotifySeveralTracksDto, res.data, {
       excludeExtraneousValues: true,
     });
   }

@@ -15,7 +15,7 @@ export class SpotifyOauthStrategy extends PassportStrategy(
         clientSecret: config.get('SPOTIFY_CLIENT_SECRET'),
         callbackURL: config.get('CALLBACK_URL'),
         scope:
-          'user-read-private playlist-modify-private playlist-read-collaborative playlist-read-private playlist-modify-private user-library-read',
+          'user-read-private playlist-modify-private playlist-read-collaborative playlist-read-private user-library-read',
       },
       (
         accessToken: string,
