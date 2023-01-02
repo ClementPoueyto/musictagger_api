@@ -1,6 +1,7 @@
 import { DataSource, In, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { Track } from 'src/shared/entities/track.entity';
+import { TaggedTrack } from 'src/shared/entities/tagged-track.entity';
 
 @Injectable()
 export class TrackRepository extends Repository<Track> {
@@ -51,16 +52,23 @@ export class TrackRepository extends Repository<Track> {
     albumTitle: string,
     artistName: string,
   ): Promise<Track | null> {
-    return Track.findOne({
-      where: {
-        title: title,
-        albumTitle: albumTitle,
-        artistName: artistName,
-        taggedTracks: {
-          userId: userId,
+    return Track.createQueryBuilder('track')
+      .leftJoinAndMapOne(
+        'track.taggedTrack',
+        TaggedTrack,
+        'taggedTrack',
+        'taggedTrack.trackId = track.id  and taggedTrack.userId = :userId',
+        { userId: userId },
+      )
+      .where(
+        'track.title = :title and track.albumTitle = :albumTitle and track.artistName = :artistName',
+        {
+          title: title,
+          albumTitle: albumTitle,
+          artistName: artistName,
         },
-      },
-    });
+      )
+      .getOne();
   }
 
   /**
