@@ -6,11 +6,8 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { Playlist } from 'src/shared/entities/playlist.entity';
-import { SpotifyPlaylist } from 'src/shared/entities/spotify/spotify-playlist.entity';
 import { Track } from 'src/shared/entities/track.entity';
 import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
-import { SpotifyPaginationPlaylistsDto } from '../spotify/dto/spotify-pagination-playlists.dto';
-import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
 import { SpotifyService } from '../spotify/spotify.service';
 import { TaggedTrackService } from '../tagged-track/tagged-track.service';
 import { UserService } from '../user/user.services';
@@ -61,7 +58,7 @@ export class PlaylistService {
       data:
         tracks?.items
           .flatMap((it) => it.track)
-          .map((tr) => this.dtoToEntitySpotifyTrackMapping(tr)) ?? [],
+          .map((tr) => Track.dtoToEntityMapping(tr)) ?? [],
       metadata: {
         total: tracks?.total ?? 0,
         page: page ?? page,
@@ -82,9 +79,12 @@ export class PlaylistService {
   ) {
     const user = await this.userService.findById(userId);
     const spotifyId = user.spotifyUser?.spotifyId;
-    createPlaylistBody.description =
-      createPlaylistBody.description + ' | TAGS : ' + tags;
-    createPlaylistBody.name = createPlaylistBody.name + ' | MUSICTAG';
+    createPlaylistBody.description = (
+      createPlaylistBody.description +
+      ' | TAGS : ' +
+      tags
+    ).trim();
+    createPlaylistBody.name = (createPlaylistBody.name + ' | MUSICTAG').trim();
 
     if (!spotifyId) throw new SpotifyUserRequiredException();
     const createdPlaylist = await this.spotifyService.createPlaylist(
@@ -94,9 +94,13 @@ export class PlaylistService {
     if (!createdPlaylist) {
       throw new Error('no playlist created');
     }
-    const playlist = this.dtoToEntitySpotifyPlaylistMapping(createdPlaylist);
+    const playlist = Playlist.dtoToEntityMapping(createdPlaylist);
     playlist.userId = userId;
     playlist.tags = tags;
+    playlist.description = createPlaylistBody.description
+      .split('| TAGS :')[0]
+      .trim();
+    playlist.name = createPlaylistBody.name.split('| MUSICTAG')[0].trim();
     await this.playlistRepository.save(playlist);
     return playlist;
   }
@@ -188,18 +192,21 @@ export class PlaylistService {
         );
       }
     }
-    updatePlaylistBody.description =
-      updatePlaylistBody.description.split('| TAGS :')[0] + ' | TAGS : ' + tags;
-    updatePlaylistBody.name =
-      updatePlaylistBody.name.split('| MUSICTAG')[0] + ' | MUSICTAG';
-    await this.clearPlaylist(userId, playlist, playlist.tags);
 
-    playlist.description = updatePlaylistBody.description;
-    playlist.name = updatePlaylistBody.name;
+    playlist.description = updatePlaylistBody.description.trim();
+    playlist.name = updatePlaylistBody.name.trim();
     playlist.tags = tags;
 
     await this.playlistRepository.save(playlist);
 
+    updatePlaylistBody.description =
+      updatePlaylistBody.description.split('| TAGS :')[0].trim() +
+      ' | TAGS : ' +
+      tags;
+    updatePlaylistBody.name =
+      updatePlaylistBody.name.split('| MUSICTAG')[0].trim() + ' | MUSICTAG';
+
+    await this.clearPlaylist(userId, playlist, playlist.tags);
     await this.spotifyService.updateDetailsPlaylist(
       spotifyId,
       updatePlaylistBody,
@@ -250,31 +257,5 @@ export class PlaylistService {
 
   async deletePlaylist(playlistId: string) {
     await this.playlistRepository.delete(playlistId);
-  }
-
-  private dtoToEntitySpotifyPlaylistMapping(
-    spotifyPlaylistDto: SpotifyPaginationPlaylistsDto,
-  ): Playlist {
-    const playlist: Playlist = new Playlist();
-    const spotifyPlaylist: SpotifyPlaylist = new SpotifyPlaylist();
-    spotifyPlaylist.spotifyUserId = spotifyPlaylistDto.owner.id;
-    spotifyPlaylist.spotifyPlaylistId = spotifyPlaylistDto.id;
-    spotifyPlaylist.spotifyUri = spotifyPlaylistDto.uri;
-    playlist.name = spotifyPlaylistDto.name;
-    playlist.description = spotifyPlaylistDto.description;
-    playlist.spotifyPlaylist = spotifyPlaylist;
-    return playlist;
-  }
-
-  private dtoToEntitySpotifyTrackMapping(trackDto: SpotifyTrackDto): Track {
-    const track = new Track();
-    track.artistName = trackDto.artists[0].name;
-    track.albumTitle = trackDto.album.name;
-    track.artists = [];
-    track.title = trackDto.name;
-    track.image = trackDto.album.images[0].url;
-    track.duration = trackDto.duration_ms;
-    track.spotifyTrack = { spotifyId: trackDto.id, uri: trackDto.uri };
-    return track;
   }
 }

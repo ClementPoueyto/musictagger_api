@@ -1,3 +1,4 @@
+import { SpotifyTrackDto } from 'src/api/spotify/dto/spotify-track.dto';
 import {
   BaseEntity,
   Column,
@@ -55,4 +56,20 @@ export class Track extends BaseEntity {
   @ManyToMany(() => Artist, (a) => a.tracks, { eager: false, cascade: true })
   @JoinTable()
   artists: Artist[];
+
+  static dtoToEntityMapping(trackDto: SpotifyTrackDto): Track {
+    const track = new Track();
+    track.artists = trackDto.artists.map((a) => Artist.dtoToEntityMapping(a));
+    track.artistName = trackDto.artists[0].name;
+    track.albumTitle = trackDto.album.name;
+    track.title = trackDto.name;
+    track.image = trackDto.album.images[0].url;
+    track.duration = trackDto.duration_ms;
+    track.spotifyTrack = { spotifyId: trackDto.id, uri: trackDto.uri };
+    track.releaseDate = new Date(trackDto.album.release_date);
+    track.popularity = trackDto.popularity;
+    track.genres = trackDto.artists[0].genres;
+    track.duration = trackDto.duration_ms;
+    return track;
+  }
 }

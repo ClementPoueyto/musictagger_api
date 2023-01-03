@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Inject } from '@nestjs/common/decorators';
+import { UserRepository } from 'src/api/user/user.repository';
 import { User } from 'src/shared/entities/user.entity';
 import { GoogleUserRequiredException } from 'src/shared/errors/google-user-required.error copy';
 import { AuthService } from './auth.services';
@@ -6,6 +8,9 @@ import { GoolgleAuthDto } from './dto/google-auth.dto';
 
 @Injectable()
 export class GoogleAuthenticationService {
+  @Inject()
+  private readonly userRepository: UserRepository;
+
   constructor(private readonly authenticationService: AuthService) {}
 
   async googleLogin(req: { user: GoolgleAuthDto }) {
@@ -23,7 +28,7 @@ export class GoogleAuthenticationService {
       user = new User();
       user.isRegisteredWithGoogle = true;
       user.email = googleUser.email;
-      await User.save(user);
+      await this.userRepository.save(user);
     }
 
     const refresh = await this.authenticationService.refreshJwtToken(user.id);

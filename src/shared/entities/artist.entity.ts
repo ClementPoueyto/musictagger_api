@@ -1,3 +1,4 @@
+import { SpotifyArtistDto } from 'src/api/spotify/dto/spotify-artist.dto';
 import {
   BaseEntity,
   Column,
@@ -36,4 +37,17 @@ export class Artist extends BaseEntity {
     onUpdate: 'CASCADE',
   })
   tracks: Track[];
+
+  static dtoToEntityMapping(artistDto: SpotifyArtistDto): Artist {
+    const artist = new Artist();
+    const spotifyArtist = new SpotifyArtist();
+    artist.name = artistDto.name;
+    artist.genres = artistDto.genres;
+    artist.popularity = artistDto.popularity;
+    artist.type = artistDto.type;
+    spotifyArtist.spotifyArtistId = artistDto.id;
+    spotifyArtist.spotifyUri = artistDto.uri;
+    artist.spotifyArtist = spotifyArtist;
+    return artist;
+  }
 }

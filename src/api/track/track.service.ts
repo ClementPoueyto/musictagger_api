@@ -6,12 +6,9 @@ import { PaginatedResultDto } from '../tagged-track/dto/paginated-result.dto';
 import { SpotifyService } from '../spotify/spotify.service';
 import { UserService } from '../user/user.services';
 import { Track } from 'src/shared/entities/track.entity';
-import { SpotifyTrackDto } from '../spotify/dto/spotify-track.dto';
 import { SpotifyUserRequiredException } from 'src/shared/errors/spotify-user-required.error';
 import { SpotifyArtistDto } from '../spotify/dto/spotify-artist.dto';
 import { Artist } from 'src/shared/entities/artist.entity';
-import { SpotifyArtist } from 'src/shared/entities/spotify/spotify-artist.entity';
-import { SpotifyTrackAnalysisDto } from '../spotify/dto/spotify-track-analysis.dto';
 import { SpotifyTrackAnalysis } from 'src/shared/entities/spotify/spotify-track-analysis.entity';
 import { TrackRepository } from './track.repository';
 import { ArtistRepository } from './artist.repository';
@@ -50,7 +47,7 @@ export class TrackService {
     );
     if (spotifyLikedTracks) {
       const spotifyLikedTracksEntities = spotifyLikedTracks.items.map((item) =>
-        this.dtoToEntitySpotifyTrackMapping(item.track),
+        Track.dtoToEntityMapping(item.track),
       );
       const newTracks: Track[] = [];
       for (const trackEntity of spotifyLikedTracksEntities) {
@@ -132,9 +129,7 @@ export class TrackService {
           tracks.map((t) => t.spotifyTrack.spotifyId),
         ),
       ]).then(async (result) => {
-        const artists = result[0].map((a) =>
-          this.dtoToEntitySpotifyArtistMapping(a),
-        );
+        const artists = result[0].map((a) => Artist.dtoToEntityMapping(a));
         for (const artist of artists) {
           const artistsEntity =
             await this.artistRepository.getByspotifyArtistId(
@@ -156,7 +151,9 @@ export class TrackService {
           );
           if (track) {
             track.analysis =
-              this.dtoToEntitySpotifyTrackAnalysisMapping(analyse);
+              SpotifyTrackAnalysis.dtoToEntitySpotifyTrackAnalysisMapping(
+                analyse,
+              );
             let genres: string[] = [];
             for (const trackArtist of track.artists) {
               if (trackArtist.genres && trackArtist.genres.length > 0) {
@@ -175,9 +172,7 @@ export class TrackService {
     return this.spotifyService
       .getArtistsByIds(spotifyArtistIds)
       .then((artistsSpotify: SpotifyArtistDto[]) => {
-        const artists = artistsSpotify.map((a) =>
-          this.dtoToEntitySpotifyArtistMapping(a),
-        );
+        const artists = artistsSpotify.map((a) => Artist.dtoToEntityMapping(a));
         return this.artistRepository.create(artists);
       });
   }
@@ -277,56 +272,5 @@ export class TrackService {
     );
 
     return suggestions;
-  }
-
-  private dtoToEntitySpotifyTrackMapping(trackDto: SpotifyTrackDto): Track {
-    const track = new Track();
-    track.artists = trackDto.artists.map((a) =>
-      this.dtoToEntitySpotifyArtistMapping(a),
-    );
-    track.artistName = trackDto.artists[0].name;
-    track.albumTitle = trackDto.album.name;
-    track.title = trackDto.name;
-    track.image = trackDto.album.images[0].url;
-    track.duration = trackDto.duration_ms;
-    track.spotifyTrack = { spotifyId: trackDto.id, uri: trackDto.uri };
-    track.releaseDate = new Date(trackDto.album.release_date);
-    track.popularity = trackDto.popularity;
-    track.genres = trackDto.artists[0].genres;
-    track.duration = trackDto.duration_ms;
-    return track;
-  }
-
-  private dtoToEntitySpotifyArtistMapping(artistDto: SpotifyArtistDto): Artist {
-    const artist = new Artist();
-    const spotifyArtist = new SpotifyArtist();
-    artist.name = artistDto.name;
-    artist.genres = artistDto.genres;
-    artist.popularity = artistDto.popularity;
-    artist.type = artistDto.type;
-    spotifyArtist.spotifyArtistId = artistDto.id;
-    spotifyArtist.spotifyUri = artistDto.uri;
-    artist.spotifyArtist = spotifyArtist;
-    return artist;
-  }
-
-  private dtoToEntitySpotifyTrackAnalysisMapping(
-    analysisDto: SpotifyTrackAnalysisDto,
-  ): SpotifyTrackAnalysis {
-    const analysis = new SpotifyTrackAnalysis();
-    analysis.key = analysisDto.key;
-    analysis.acousticness = analysisDto.acousticness;
-    analysis.danceability = analysisDto.danceability;
-    analysis.duration_ms = analysisDto.duration_ms;
-    analysis.energy = analysisDto.energy;
-    analysis.instrumentalness = analysisDto.instrumentalness;
-    analysis.liveness = analysisDto.liveness;
-    analysis.loudness = analysisDto.loudness;
-    analysis.mode = analysisDto.mode;
-    analysis.speechiness = analysisDto.speechiness;
-    analysis.tempo = analysisDto.tempo;
-    analysis.time_signature = analysisDto.time_signature;
-    analysis.valence = analysisDto.valence;
-    return analysis;
   }
 }

@@ -1,3 +1,4 @@
+import { SpotifyTrackAnalysisDto } from 'src/api/spotify/dto/spotify-track-analysis.dto';
 import { Column } from 'typeorm';
 
 export class SpotifyTrackAnalysis {
@@ -86,4 +87,24 @@ export class SpotifyTrackAnalysis {
   */
   @Column({ type: 'decimal', nullable: true })
   valence?: number;
+
+  static dtoToEntitySpotifyTrackAnalysisMapping(
+    analysisDto: SpotifyTrackAnalysisDto,
+  ): SpotifyTrackAnalysis {
+    const analysis = new SpotifyTrackAnalysis();
+    analysis.key = analysisDto.key;
+    analysis.acousticness = analysisDto.acousticness;
+    analysis.danceability = analysisDto.danceability;
+    analysis.duration_ms = analysisDto.duration_ms;
+    analysis.energy = analysisDto.energy;
+    analysis.instrumentalness = analysisDto.instrumentalness;
+    analysis.liveness = analysisDto.liveness;
+    analysis.loudness = analysisDto.loudness;
+    analysis.mode = analysisDto.mode;
+    analysis.speechiness = analysisDto.speechiness;
+    analysis.tempo = analysisDto.tempo;
+    analysis.time_signature = analysisDto.time_signature;
+    analysis.valence = analysisDto.valence;
+    return analysis;
+  }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { UserRepository } from 'src/api/user/user.repository';
 import { SharedModule } from 'src/shared/shared.module';
 import { AuthController } from './auth.controller';
 import { AuthHelper } from './auth.helper';
@@ -31,6 +32,7 @@ import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
     RefreshJwtStrategy,
     GoogleStrategy,
     AuthHelper,
+    UserRepository,
   ],
   exports: [AuthService, GoogleAuthenticationService, AuthHelper],
 })

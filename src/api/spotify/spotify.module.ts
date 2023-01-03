@@ -32,6 +32,11 @@ export class SpotifyModule implements OnModuleInit {
             error.response.data.error.message,
           );
         }
+        if (error.response.status === HttpStatus.FORBIDDEN) {
+          throw new SpotifyUnauthorizedException(
+            error.response.data.error.message,
+          );
+        }
         if (error.response.status !== HttpStatus.OK) {
           throw new Error();
         }
