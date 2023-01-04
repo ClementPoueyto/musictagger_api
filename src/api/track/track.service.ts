@@ -191,7 +191,7 @@ export class TrackService {
       }
     }
     track.artists = artists;
-    return await this.artistRepository.save(track);
+    return await this.trackRepository.save(track);
   }
 
   async getSuggestionsTags(trackId: string): Promise<string[]> {
