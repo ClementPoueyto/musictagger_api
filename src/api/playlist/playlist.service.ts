@@ -192,6 +192,7 @@ export class PlaylistService {
         );
       }
     }
+    await this.clearPlaylist(userId, playlist, playlist.tags);
 
     playlist.description = updatePlaylistBody.description.trim();
     playlist.name = updatePlaylistBody.name.trim();
@@ -206,7 +207,6 @@ export class PlaylistService {
     updatePlaylistBody.name =
       updatePlaylistBody.name.split('| MUSICTAG')[0].trim() + ' | MUSICTAG';
 
-    await this.clearPlaylist(userId, playlist, playlist.tags);
     await this.spotifyService.updateDetailsPlaylist(
       spotifyId,
       updatePlaylistBody,
@@ -219,6 +219,7 @@ export class PlaylistService {
   }
 
   async clearPlaylist(userId: string, playlist: Playlist, tags: string[]) {
+    console.log(tags);
     const user = await this.userService.findById(userId);
     if (!user.spotifyUser) throw new SpotifyUserRequiredException();
     const spotifyId = user.spotifyUser?.spotifyId;
@@ -229,6 +230,8 @@ export class PlaylistService {
       tags,
       '',
     );
+    console.log(tracks.data.length);
+
     return await this.spotifyService.deleteItemsPlaylist(
       spotifyId,
       tracks.data.map((t) => t.track.spotifyTrack.uri),
@@ -251,6 +254,28 @@ export class PlaylistService {
     return await this.spotifyService.addItemsPlaylist(
       spotifyId,
       tracks.data.map((t) => t.track.spotifyTrack.uri),
+      playlist.spotifyPlaylist.spotifyPlaylistId,
+    );
+  }
+
+  async addPlaylistTrack(userId: string, playlist: Playlist, track: Track) {
+    const user = await this.userService.findById(userId);
+    if (!user.spotifyUser) throw new SpotifyUserRequiredException();
+    const spotifyId = user.spotifyUser?.spotifyId;
+    return await this.spotifyService.addItemsPlaylist(
+      spotifyId,
+      [track.spotifyTrack.uri],
+      playlist.spotifyPlaylist.spotifyPlaylistId,
+    );
+  }
+
+  async deletePlaylistTrack(userId: string, playlist: Playlist, track: Track) {
+    const user = await this.userService.findById(userId);
+    if (!user.spotifyUser) throw new SpotifyUserRequiredException();
+    const spotifyId = user.spotifyUser?.spotifyId;
+    return await this.spotifyService.deleteItemsPlaylist(
+      spotifyId,
+      [track.spotifyTrack.uri],
       playlist.spotifyPlaylist.spotifyPlaylistId,
     );
   }

@@ -69,17 +69,18 @@ export class SpotifyService {
     tracksURI: string[],
     playlistId: string,
   ) {
-    console.log(tracksURI);
-    console.log(tracksURI.length);
     let index = 0;
     while (index < tracksURI.length) {
       const array = tracksURI.slice(index, index + this.MAX_SIZE_ARRAY);
       await this.httpService.axiosRef.post(
         this.SPOTIFY_URL + 'playlists/' + playlistId + '/tracks',
-        { uris: tracksURI, position: 0 },
+        { uris: array, position: 0 },
         { headers: await this.getHeaders(spotifyId) },
       );
       index += array.length;
+      /*if (index < tracksURI.length) {
+        await new Promise((res) => setTimeout(res, 500));
+      }*/
     }
   }
 
@@ -103,6 +104,9 @@ export class SpotifyService {
         },
       );
       index += array.length;
+      /*if (index < tracksURI.length) {
+        await new Promise((res) => setTimeout(res, 500));
+      }*/
     }
   }
 

@@ -2,6 +2,7 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { Playlist } from 'src/shared/entities/playlist.entity';
 import { TaggedTrack } from 'src/shared/entities/tagged-track.entity';
+import { Track } from 'src/shared/entities/track.entity';
 import { PlaylistService } from '../playlist/playlist.service';
 import { TrackDto } from '../track/dto/track.dto';
 import { TrackService } from '../track/track.service';
@@ -41,10 +42,9 @@ export class TaggedTrackService {
       : taggedTrack.tags.push(createTag.tag);
     taggedTrack.userId = userId;
     taggedTrack.track = track;
-    await this.playlistsDelete(userId, taggedTrack.tags);
+    this.playlistsAdd(userId, taggedTrack.tags, createTag.tag, track);
 
     await this.taggedTrackRepository.save(taggedTrack);
-    await this.playlistsAdd(userId, taggedTrack.tags);
 
     return taggedTrack;
   }
@@ -67,7 +67,6 @@ export class TaggedTrackService {
     taggedTrack.tags = taggedTrack.tags.filter((e) => {
       return e != deleteTag.tag;
     });
-    await this.playlistsDelete(userId, oldTags);
     if (taggedTrack.tags.length == 0) {
       await this.taggedTrackRepository.remove(taggedTrack);
     } else {
@@ -75,26 +74,36 @@ export class TaggedTrackService {
       taggedTrack.track = track;
       await this.taggedTrackRepository.save(taggedTrack);
     }
-    await this.playlistsAdd(userId, oldTags);
+    this.playlistsDelete(userId, oldTags, deleteTag.tag, track);
   }
 
-  private async playlistsAdd(userId: string, tags: string[]) {
+  private async playlistsAdd(
+    userId: string,
+    tags: string[],
+    selectedTag: string,
+    track: Track,
+  ) {
     const playlists: Playlist[] =
       await this.playlistService.getPlaylistsContainingTags(userId, tags);
     for (const playlist of playlists) {
-      await this.playlistService.addPlaylistTracks(
-        userId,
-        playlist,
-        playlist.tags,
-      );
+      if (playlist.tags.includes(selectedTag)) {
+        await this.playlistService.addPlaylistTrack(userId, playlist, track);
+      }
     }
   }
 
-  private async playlistsDelete(userId: string, tags: string[]) {
+  private async playlistsDelete(
+    userId: string,
+    tags: string[],
+    selectedTag: string,
+    track: Track,
+  ) {
     const playlists: Playlist[] =
       await this.playlistService.getPlaylistsContainingTags(userId, tags);
     for (const playlist of playlists) {
-      await this.playlistService.clearPlaylist(userId, playlist, playlist.tags);
+      if (playlist.tags.includes(selectedTag)) {
+        await this.playlistService.deletePlaylistTrack(userId, playlist, track);
+      }
     }
   }
 

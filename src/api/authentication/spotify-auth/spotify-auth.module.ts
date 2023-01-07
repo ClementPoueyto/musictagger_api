@@ -48,6 +48,11 @@ export class SpotifyAuthModule implements OnModuleInit {
             error.response.data.error.message,
           );
         }
+        if (error.response.status === HttpStatus.TOO_MANY_REQUESTS) {
+          throw new SpotifyAuthUnauthorizedException(
+            error.response.data.error.message,
+          );
+        }
         if (error.response.status !== HttpStatus.OK) {
           throw new Error();
         }
