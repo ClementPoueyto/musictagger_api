@@ -76,6 +76,7 @@ export class PlaylistService {
     userId: string,
     createPlaylistBody: CreateSpotifyPlaylistDto,
     tags: string[],
+    strict: boolean,
   ) {
     const user = await this.userService.findById(userId);
     const spotifyId = user.spotifyUser?.spotifyId;
@@ -101,6 +102,7 @@ export class PlaylistService {
       .split('| TAGS :')[0]
       .trim();
     playlist.name = createPlaylistBody.name.split('| MUSICTAG')[0].trim();
+    playlist.strict = strict;
     await this.playlistRepository.save(playlist);
     return playlist;
   }
@@ -112,11 +114,21 @@ export class PlaylistService {
     );
   }
 
-  async getPlaylistsContainingTags(
+  async getStrictsPlaylistsContainingTags(
     userId: string,
     tags: string[],
   ): Promise<Playlist[]> {
-    return await this.playlistRepository.getPlaylistsContainingTagsAndByUserId(
+    return await this.playlistRepository.getStrictPlaylistsContainingTagsAndByUserId(
+      userId,
+      tags,
+    );
+  }
+
+  async getNotStrictsPlaylistsContainingTags(
+    userId: string,
+    tags: string[],
+  ): Promise<Playlist[]> {
+    return await this.playlistRepository.getNotStrictPlaylistsContainingTagsAndByUserId(
       userId,
       tags,
     );
@@ -125,6 +137,7 @@ export class PlaylistService {
   async generatePlaylistItems(
     userId: string,
     tags: string[],
+    strict: boolean,
     createPlaylistBody: CreateSpotifyPlaylistDto,
   ) {
     const user = await this.userService.findById(userId);
@@ -140,7 +153,12 @@ export class PlaylistService {
         'playlist with tags : ' + tags + ' already existing',
       );
     } else {
-      playlist = await this.createPlaylist(userId, createPlaylistBody, tags);
+      playlist = await this.createPlaylist(
+        userId,
+        createPlaylistBody,
+        tags,
+        strict,
+      );
     }
     const tracks = await this.taggedtrackService.getTaggedTracks(
       userId,
@@ -148,6 +166,8 @@ export class PlaylistService {
       Number.MAX_SAFE_INTEGER,
       tags,
       '',
+      false,
+      strict,
     );
 
     await this.spotifyService.addItemsPlaylist(
@@ -163,6 +183,7 @@ export class PlaylistService {
     userId: string,
     playlistId: string,
     tags: string[],
+    strict: boolean,
     updatePlaylistBody: CreateSpotifyPlaylistDto,
   ) {
     const user = await this.userService.findById(userId);
@@ -192,12 +213,12 @@ export class PlaylistService {
         );
       }
     }
-    await this.clearPlaylist(userId, playlist, playlist.tags);
+    await this.clearPlaylist(userId, playlist, playlist.tags, strict);
 
     playlist.description = updatePlaylistBody.description.trim();
     playlist.name = updatePlaylistBody.name.trim();
     playlist.tags = tags;
-
+    playlist.strict = strict;
     await this.playlistRepository.save(playlist);
 
     updatePlaylistBody.description =
@@ -213,13 +234,17 @@ export class PlaylistService {
       playlist.spotifyPlaylist.spotifyPlaylistId,
     );
     if (isNewTags) {
-      await this.addPlaylistTracks(userId, playlist, tags);
+      await this.addPlaylistTracksByTags(userId, playlist, tags, strict);
     }
     return playlist;
   }
 
-  async clearPlaylist(userId: string, playlist: Playlist, tags: string[]) {
-    console.log(tags);
+  async clearPlaylist(
+    userId: string,
+    playlist: Playlist,
+    tags: string[],
+    strict: boolean,
+  ) {
     const user = await this.userService.findById(userId);
     if (!user.spotifyUser) throw new SpotifyUserRequiredException();
     const spotifyId = user.spotifyUser?.spotifyId;
@@ -229,9 +254,9 @@ export class PlaylistService {
       Number.MAX_SAFE_INTEGER,
       tags,
       '',
+      false,
+      strict,
     );
-    console.log(tracks.data.length);
-
     return await this.spotifyService.deleteItemsPlaylist(
       spotifyId,
       tracks.data.map((t) => t.track.spotifyTrack.uri),
@@ -239,7 +264,12 @@ export class PlaylistService {
     );
   }
 
-  async addPlaylistTracks(userId: string, playlist: Playlist, tags: string[]) {
+  async addPlaylistTracksByTags(
+    userId: string,
+    playlist: Playlist,
+    tags: string[],
+    strict: boolean,
+  ) {
     const user = await this.userService.findById(userId);
     if (!user.spotifyUser) throw new SpotifyUserRequiredException();
     const spotifyId = user.spotifyUser?.spotifyId;
@@ -249,6 +279,8 @@ export class PlaylistService {
       Number.MAX_SAFE_INTEGER,
       tags,
       '',
+      false,
+      strict,
     );
 
     return await this.spotifyService.addItemsPlaylist(

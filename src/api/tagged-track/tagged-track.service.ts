@@ -83,10 +83,31 @@ export class TaggedTrackService {
     selectedTag: string,
     track: Track,
   ) {
-    const playlists: Playlist[] =
-      await this.playlistService.getPlaylistsContainingTags(userId, tags);
-    for (const playlist of playlists) {
+    const strictPlaylists: Playlist[] =
+      await this.playlistService.getStrictsPlaylistsContainingTags(
+        userId,
+        tags,
+      );
+    for (const playlist of strictPlaylists) {
       if (playlist.tags.includes(selectedTag)) {
+        await this.playlistService.addPlaylistTrack(userId, playlist, track);
+      }
+    }
+    const notStrictPlaylists: Playlist[] =
+      await this.playlistService.getNotStrictsPlaylistsContainingTags(
+        userId,
+        tags,
+      );
+    for (const playlist of notStrictPlaylists) {
+      let alreadyInPlaylist = false;
+      const oldTagsTrack = tags.filter((t) => t != selectedTag);
+      for (const tag of oldTagsTrack) {
+        if (playlist.tags.includes(tag)) {
+          alreadyInPlaylist = true;
+        }
+      }
+
+      if (playlist.tags.includes(selectedTag) && !alreadyInPlaylist) {
         await this.playlistService.addPlaylistTrack(userId, playlist, track);
       }
     }
@@ -98,10 +119,31 @@ export class TaggedTrackService {
     selectedTag: string,
     track: Track,
   ) {
-    const playlists: Playlist[] =
-      await this.playlistService.getPlaylistsContainingTags(userId, tags);
-    for (const playlist of playlists) {
+    const strictPlaylists: Playlist[] =
+      await this.playlistService.getStrictsPlaylistsContainingTags(
+        userId,
+        tags,
+      );
+    for (const playlist of strictPlaylists) {
       if (playlist.tags.includes(selectedTag)) {
+        await this.playlistService.deletePlaylistTrack(userId, playlist, track);
+      }
+    }
+
+    const noStrictPlaylists: Playlist[] =
+      await this.playlistService.getNotStrictsPlaylistsContainingTags(
+        userId,
+        tags,
+      );
+    for (const playlist of noStrictPlaylists) {
+      let isStillInPlaylist = false;
+      const newTagsTrack = tags.filter((t) => t !== selectedTag);
+      for (const tag of newTagsTrack) {
+        if (playlist.tags.includes(tag)) {
+          isStillInPlaylist = true;
+        }
+      }
+      if (playlist.tags.includes(selectedTag) && !isStillInPlaylist) {
         await this.playlistService.deletePlaylistTrack(userId, playlist, track);
       }
     }
@@ -175,12 +217,16 @@ export class TaggedTrackService {
     tags: Array<string> = [],
     query = '',
     onlyMetadata?: boolean,
+    strict?: boolean,
   ): Promise<PaginatedResultDto<TaggedTrackDto>> {
     if (!limit) {
       limit = 50;
     }
     if (!page) {
       page = 0;
+    }
+    if (strict == undefined || strict == null) {
+      strict = true;
     }
     if (onlyMetadata) {
       const res =
@@ -190,6 +236,7 @@ export class TaggedTrackService {
           query,
           page,
           limit,
+          strict,
         );
       const resultDto: PaginatedResultDto<TaggedTrackDto> = {
         data: [],
@@ -208,6 +255,7 @@ export class TaggedTrackService {
           query,
           page,
           limit,
+          strict,
         );
       const resultDto: PaginatedResultDto<TaggedTrackDto> = {
         data: plainToInstance(TaggedTrackDto, res[0], {

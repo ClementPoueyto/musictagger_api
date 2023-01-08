@@ -100,6 +100,7 @@ export class PlaylistController {
     const playlist = await this.playlistService.generatePlaylistItems(
       userId,
       req.body.tags,
+      req.body.strict,
       req.body.playlist,
     );
     return plainToInstance(PlaylistDto, playlist);
@@ -120,8 +121,10 @@ export class PlaylistController {
       userId,
       playlistId,
       req.body.tags,
+      req.body.strict,
       req.body.playlist,
     );
+
     return plainToInstance(PlaylistDto, playlist);
   }
 
@@ -153,6 +156,7 @@ export class PlaylistController {
     const playlist = await this.playlistService.generatePlaylistItems(
       userId,
       req.body.tags,
+      req.body.strict,
       req.body.playlist,
     );
     return plainToInstance(PlaylistDto, playlist);

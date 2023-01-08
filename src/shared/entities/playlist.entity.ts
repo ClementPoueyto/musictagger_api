@@ -16,6 +16,9 @@ export class Playlist extends BaseEntity {
   @Column()
   description: string;
 
+  @Column({ default: true })
+  strict: boolean;
+
   @Column(() => SpotifyPlaylist)
   spotifyPlaylist: SpotifyPlaylist;
 

@@ -44,15 +44,17 @@ export class TaggedTrackRepository extends Repository<TaggedTrack> {
    */
   private getByUserIdAndTagsAndQuery(
     userId: string,
-    tags: Array<string> = [],
+    filters: Array<string> = [],
     query = '',
     page = 0,
     limit = 50,
+    isStrict = true,
   ): SelectQueryBuilder<TaggedTrack> {
+    const operand = isStrict ? '@>' : '&&';
     return TaggedTrack.createQueryBuilder('taggedtrack')
       .innerJoinAndSelect('taggedtrack.track', 'track')
       .where('taggedtrack.userId = :id', { id: userId })
-      .andWhere('tags @> :filters', { filters: tags })
+      .andWhere('tags ' + operand + ' :filters', { filters: filters })
       .andWhere(
         '(LOWER(track.title) LIKE LOWER(:query) OR LOWER(track.artistName) LIKE LOWER(:query) OR LOWER(track.albumTitle) LIKE LOWER(:query))',
         {
@@ -73,6 +75,7 @@ export class TaggedTrackRepository extends Repository<TaggedTrack> {
     query = '',
     page = 0,
     limit = 50,
+    isStrict = true,
   ): Promise<number> {
     return this.getByUserIdAndTagsAndQuery(
       userId,
@@ -80,6 +83,7 @@ export class TaggedTrackRepository extends Repository<TaggedTrack> {
       query,
       page,
       limit,
+      isStrict,
     ).getCount();
   }
 
@@ -92,6 +96,7 @@ export class TaggedTrackRepository extends Repository<TaggedTrack> {
     query = '',
     page = 0,
     limit = 50,
+    isStrict = true,
   ): Promise<[TaggedTrack[], number]> {
     return this.getByUserIdAndTagsAndQuery(
       userId,
@@ -99,6 +104,7 @@ export class TaggedTrackRepository extends Repository<TaggedTrack> {
       query,
       page,
       limit,
+      isStrict,
     ).getManyAndCount();
   }
 }

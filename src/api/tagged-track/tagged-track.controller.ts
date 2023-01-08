@@ -99,11 +99,16 @@ export class TaggedTrackController {
     tags?: string[],
     @Query('query') query?: string,
     @Query('onlyMetadata') onlyMetadata?: boolean,
+    @Query('operand') operand?: string,
   ): Promise<PaginatedResultDto<TaggedTrackDto>> {
+    let strict = true;
     if (!userId) throw new UserIdRequiredException();
     if (userId != req.user.id) throw new UnauthorizedException();
     if (tags) {
       tags = tags.map((tag) => tag.trim());
+    }
+    if (operand === 'or') {
+      strict = false;
     }
     return await this.taggedTrackService.getTaggedTracks(
       userId,
@@ -112,6 +117,7 @@ export class TaggedTrackController {
       tags,
       query,
       onlyMetadata,
+      strict,
     );
   }
 

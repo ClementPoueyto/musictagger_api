@@ -255,7 +255,7 @@ export class TrackService {
         suggestions.push('dance');
       }
       if (track.popularity && track.popularity > 0.75) {
-        suggestions.push('hit');
+        suggestions.push('Hit');
       }
       const yearDiff = Math.abs(
         new Date(

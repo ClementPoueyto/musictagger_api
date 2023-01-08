@@ -39,15 +39,28 @@ export class PlaylistRepository extends Repository<Playlist> {
   }
 
   /**
-   * Get all playlists containing at least @tags for a user with @userId
+   * Get all stricts playlists containing at least @tags for a user with @userId
    */
-  async getPlaylistsContainingTagsAndByUserId(
+  async getStrictPlaylistsContainingTagsAndByUserId(
     userId: string,
     tags: string[],
   ): Promise<Playlist[]> {
     return Playlist.createQueryBuilder('playlist')
       .where('playlist.userId = :id', { id: userId })
-      .andWhere('tags <@ :tags', { tags: tags })
+      .andWhere('strict = true and tags <@ :tags', { tags: tags })
+      .getMany();
+  }
+
+  /**
+   * Get all not stricts playlists containing at least @tags for a user with @userId
+   */
+  async getNotStrictPlaylistsContainingTagsAndByUserId(
+    userId: string,
+    tags: string[],
+  ): Promise<Playlist[]> {
+    return Playlist.createQueryBuilder('playlist')
+      .where('playlist.userId = :id', { id: userId })
+      .andWhere('strict = false and tags && :tags', { tags: tags })
       .getMany();
   }
 }
